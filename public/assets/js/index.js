@@ -1,20 +1,22 @@
 // Preparação
-const $canvas = document.getElementById('canvas');
+const $canvas = document.getElementById("canvas");
 let users = {};
 let user = undefined;
 
 // Renderizando Usuários
 function renderUsers() {
   $canvas.innerHTML = `
-      ${Object.keys(users).map((userId) => {
-    const user = users[userId]
+      ${Object.keys(users)
+        .map((userId) => {
+          const user = users[userId];
 
-    console.log(user);
-
-    return `
-          <div class="player" style="top: ${user.y || 0}px; left: ${user.x || 0}px;">${user.id}</div>
+          return `
+          <div class="player" style="top: ${user.y || 0}px; left: ${
+            user.x || 0
+          }px;">${user.id}</div>
         `;
-  }).join('')}
+        })
+        .join("")}
     `;
 }
 // Load do Jogo [MANUAL]
