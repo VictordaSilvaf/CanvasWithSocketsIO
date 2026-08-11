@@ -30,7 +30,7 @@ export default function Lobby({
   return (
     <div className="mx-auto mt-12 max-w-md border-2 border-forest-600 bg-forest-950/85 px-7 py-8 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
       <h1 className="m-0 mb-2 text-center text-[42px] tracking-wide text-forest-300">
-        Bomberman
+        SupraBom
       </h1>
       <RoomCodeCopy code={roomCode} className="mb-4" />
       <p className="mb-5 text-center text-sm text-forest-200">

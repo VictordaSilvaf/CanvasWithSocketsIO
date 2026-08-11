@@ -1,4 +1,4 @@
-# Bomberman com Socket.IO + React
+# SupraBom
 
 Projeto de estudo de **comunicação em tempo real** com [Socket.IO](https://socket.io/), [React](https://react.dev/) e [Tailwind CSS](https://tailwindcss.com/).
 

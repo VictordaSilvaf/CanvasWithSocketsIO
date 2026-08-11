@@ -18,7 +18,7 @@ export default function Home({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h1 className="m-0 text-[42px] tracking-wide text-forest-300">
-            Bomberman
+            SupraBom
           </h1>
           {user ? (
             <p className="mt-1 text-xs text-forest-300">

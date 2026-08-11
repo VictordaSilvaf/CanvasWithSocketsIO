@@ -71,7 +71,7 @@ export function getAbility(id) {
   return ABILITIES[id] || null;
 }
 
-const PLAYER_PREFS_KEY = "bomberman:playerPrefs";
+const PLAYER_PREFS_KEY = "suprabom:playerPrefs";
 
 export function loadPlayerPrefs() {
   try {

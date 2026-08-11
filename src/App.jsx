@@ -8,7 +8,7 @@ import RoomChat from "./components/RoomChat";
 import { useAuth } from "./hooks/useAuth";
 import { useGameSocket } from "./hooks/useGameSocket";
 
-const GUEST_KEY = "bomberman:guest";
+const GUEST_KEY = "suprabom:guest";
 
 export default function App() {
   const auth = useAuth();
@@ -150,10 +150,10 @@ export default function App() {
             selectAbility(abilityId);
             try {
               const prefs = JSON.parse(
-                localStorage.getItem("bomberman:playerPrefs") || "{}"
+                localStorage.getItem("suprabom:playerPrefs") || "{}"
               );
               localStorage.setItem(
-                "bomberman:playerPrefs",
+                "suprabom:playerPrefs",
                 JSON.stringify({ ...prefs, abilityId })
               );
             } catch {

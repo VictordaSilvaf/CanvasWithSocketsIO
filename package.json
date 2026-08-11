@@ -1,8 +1,8 @@
 {
-  "name": "bomberman-socketio",
+  "name": "suprabom",
   "version": "1.0.0",
   "private": true,
-  "description": "Bomberman multiplayer com Socket.IO, React e Tailwind",
+  "description": "SupraBom multiplayer com Socket.IO, React e Tailwind",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n server,client -c green,cyan \"npm:dev:server\" \"npm:dev:client\"",
