@@ -18,6 +18,7 @@ export function useGameSocket() {
   const [roomError, setRoomError] = useState(null);
   const [takenSprites, setTakenSprites] = useState([]);
   const [joining, setJoining] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
   const gameStateRef = useRef(gameState);
   const myIdRef = useRef(myId);
 
@@ -72,6 +73,7 @@ export function useGameSocket() {
       setPendingRoomCode(null);
       setTakenSprites([]);
       setGameState(INITIAL_STATE);
+      setChatMessages([]);
       setScreen("home");
       setRoomError(data.reason || "Você foi expulso da sala.");
     });
@@ -87,6 +89,20 @@ export function useGameSocket() {
       setTakenSprites(state.takenSprites || []);
       setRoomError(null);
       setScreen("inRoom");
+    });
+
+    socket.on("ON_CHAT_HISTORY", (payload) => {
+      const data = JSON.parse(payload);
+      setChatMessages(Array.isArray(data.messages) ? data.messages : []);
+    });
+
+    socket.on("ON_CHAT_MESSAGE", (payload) => {
+      const message = JSON.parse(payload);
+      setChatMessages((prev) => {
+        if (prev.some((m) => m.id === message.id)) return prev;
+        const next = [...prev, message];
+        return next.length > 80 ? next.slice(-80) : next;
+      });
     });
 
     return () => {
@@ -112,6 +128,15 @@ export function useGameSocket() {
 
   useEffect(() => {
     const onKeyDown = (e) => {
+      const tag = e.target?.tagName;
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        e.target?.isContentEditable
+      ) {
+        return;
+      }
+
       const state = gameStateRef.current;
       const id = myIdRef.current;
       const socket = socketRef.current;
@@ -213,6 +238,7 @@ export function useGameSocket() {
     setTakenSprites([]);
     setJoining(false);
     setGameState(INITIAL_STATE);
+    setChatMessages([]);
     setScreen("home");
   };
 
@@ -228,6 +254,12 @@ export function useGameSocket() {
     socketRef.current?.emit("ROOM_KICK", { playerId });
   };
 
+  const sendChat = (text) => {
+    const value = String(text || "").trim();
+    if (!value) return;
+    socketRef.current?.emit("ROOM_CHAT", { text: value });
+  };
+
   return {
     myId,
     connected,
@@ -237,6 +269,7 @@ export function useGameSocket() {
     roomError,
     takenSprites,
     joining,
+    chatMessages,
     createRoom,
     prepareJoin,
     joinRoom,
@@ -244,5 +277,6 @@ export function useGameSocket() {
     toggleReady,
     selectAbility,
     kickPlayer,
+    sendChat,
   };
 }

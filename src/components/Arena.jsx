@@ -14,14 +14,14 @@ function MapTiles({ map, tile }) {
         tiles.push(
           <div
             key={`t-${row}-${col}`}
-            className="pointer-events-none absolute z-0 shadow-[inset_0_0_0_1px_#212529]"
+            className="pointer-events-none absolute z-0 shadow-[inset_0_0_0_1px_#0a2540]"
             style={{
               top: row * tile,
               left: col * tile,
               width: tile,
               height: tile,
               background:
-                "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 45%), repeating-linear-gradient(0deg, #495057 0px, #495057 14px, #343a40 14px, #343a40 15px), repeating-linear-gradient(90deg, #6c757d 0px, #6c757d 14px, #343a40 14px, #343a40 15px)",
+                "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 45%), repeating-linear-gradient(0deg, #3d7ea6 0px, #3d7ea6 14px, #1e4d6b 14px, #1e4d6b 15px), repeating-linear-gradient(90deg, #5ba3c9 0px, #5ba3c9 14px, #1e4d6b 14px, #1e4d6b 15px)",
             }}
           />
         );
@@ -236,7 +236,7 @@ export default function Arena({ gameState, myId }) {
       }}
     >
       <div
-        className="absolute left-1/2 top-1/2 origin-center border-4 border-[#212529] bg-gradient-to-br from-[#6c757d] to-[#343a40] p-2.5 shadow-[inset_0_0_0_2px_#adb5bd,0_8px_24px_rgba(0,0,0,0.35)]"
+        className="absolute left-1/2 top-1/2 origin-center border-4 border-[#0a2540] bg-gradient-to-br from-[#3d7ea6] to-[#1e4d6b] p-2.5 shadow-[inset_0_0_0_2px_#7eb8d9,0_8px_24px_rgba(0,0,0,0.35)]"
         style={{
           width: frameSize,
           height: frameSize,

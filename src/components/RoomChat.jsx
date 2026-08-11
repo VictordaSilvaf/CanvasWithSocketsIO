@@ -1,0 +1,146 @@
+import { useEffect, useRef, useState } from "react";
+
+export default function RoomChat({
+  messages,
+  myId,
+  onSend,
+  collapsed = false,
+}) {
+  const [text, setText] = useState("");
+  const [open, setOpen] = useState(!collapsed);
+  const listRef = useRef(null);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages, open]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    const value = text.trim();
+    if (!value || typeof onSend !== "function") return;
+    onSend(value);
+    setText("");
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="fixed right-3 top-1/2 z-30 -translate-y-1/2 cursor-pointer border-2 border-forest-600 bg-forest-950/95 px-2 py-4 text-xs font-bold uppercase tracking-wider text-forest-100 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:bg-forest-900"
+        title="Abrir chat"
+      >
+        Chat
+        {messages?.length ? (
+          <span className="mt-1 block text-[10px] font-normal text-forest-300">
+            {messages.length}
+          </span>
+        ) : null}
+      </button>
+    );
+  }
+
+  return (
+    <aside className="fixed right-0 top-0 z-30 flex h-dvh w-[min(100vw,320px)] flex-col border-l-2 border-forest-600 bg-forest-950/95 shadow-[-8px_0_24px_rgba(0,0,0,0.35)]">
+      <div className="flex items-center justify-between border-b border-forest-600 px-3 py-2.5">
+        <div>
+          <p className="m-0 text-sm font-bold uppercase tracking-wider text-forest-100">
+            Chat da sala
+          </p>
+          <p className="m-0 text-[10px] text-forest-400">Só quem está na sala</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="cursor-pointer border border-forest-600 bg-transparent px-2 py-1 text-[10px] uppercase tracking-wider text-forest-200 hover:bg-forest-600/20"
+        >
+          Ocultar
+        </button>
+      </div>
+
+      <div
+        ref={listRef}
+        className="flex-1 space-y-2 overflow-y-auto px-3 py-3"
+      >
+        {(messages || []).length === 0 ? (
+          <p className="text-center text-xs text-forest-400">
+            Nenhuma mensagem ainda. Digite algo!
+          </p>
+        ) : (
+          (messages || []).map((msg) => {
+            const mine = msg.playerId === myId;
+            return (
+              <div
+                key={msg.id}
+                className={[
+                  "rounded border px-2.5 py-1.5 text-sm",
+                  mine
+                    ? "border-forest-400/50 bg-forest-600/25"
+                    : "border-forest-700 bg-forest-900/60",
+                ].join(" ")}
+              >
+                <div className="mb-0.5 flex items-baseline justify-between gap-2">
+                  <span
+                    className={[
+                      "truncate text-[11px] font-bold",
+                      mine ? "text-forest-200" : "text-forest-300",
+                    ].join(" ")}
+                  >
+                    {mine ? "Você" : msg.name || "Jogador"}
+                  </span>
+                  <span className="shrink-0 text-[10px] text-forest-500">
+                    {formatTime(msg.at)}
+                  </span>
+                </div>
+                <p className="m-0 break-words text-forest-100">{msg.text}</p>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <form
+        onSubmit={submit}
+        className="border-t border-forest-600 p-3"
+      >
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={text}
+            maxLength={120}
+            autoComplete="off"
+            placeholder="Mensagem…"
+            onChange={(e) => setText(e.target.value)}
+            className="min-w-0 flex-1 border border-forest-600 bg-forest-900 px-3 py-2 text-sm text-forest-100 outline-none placeholder:text-forest-400 focus:border-forest-400"
+          />
+          <button
+            type="submit"
+            disabled={!text.trim()}
+            className={[
+              "shrink-0 border-0 px-3 py-2 text-xs font-bold uppercase tracking-wide text-forest-950",
+              text.trim()
+                ? "cursor-pointer bg-forest-500 hover:bg-forest-400"
+                : "cursor-not-allowed bg-forest-500 opacity-50",
+            ].join(" ")}
+          >
+            Enviar
+          </button>
+        </div>
+      </form>
+    </aside>
+  );
+}
+
+function formatTime(at) {
+  if (!at) return "";
+  try {
+    return new Date(at).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}

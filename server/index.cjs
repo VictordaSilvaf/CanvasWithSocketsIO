@@ -212,6 +212,8 @@ function createRoom(createdBy) {
     pickupSeq: 0,
     projectileSeq: 0,
     fxSeq: 0,
+    chatSeq: 0,
+    chat: [],
     resetTimer: null,
     countdownTimer: null,
     projectileTimer: null,
@@ -809,7 +811,39 @@ io.sockets.on("connection", (socket) => {
     }
 
     socket.emit("ON_ROOM_JOINED", JSON.stringify({ code: room.code }));
+    socket.emit(
+      "ON_CHAT_HISTORY",
+      JSON.stringify({ messages: room.chat || [] })
+    );
     emitState(room);
+  });
+
+  socket.on("ROOM_CHAT", (payload) => {
+    const room = getRoom(socket.data.roomCode);
+    if (!room) return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const text = String(payload?.text || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 120);
+    if (!text) return;
+
+    if (!Array.isArray(room.chat)) room.chat = [];
+    const message = {
+      id: `chat-${++room.chatSeq}`,
+      playerId: player.id,
+      name: player.name,
+      text,
+      at: Date.now(),
+    };
+    room.chat.push(message);
+    if (room.chat.length > 80) {
+      room.chat = room.chat.slice(-80);
+    }
+
+    io.to(room.code).emit("ON_CHAT_MESSAGE", JSON.stringify(message));
   });
 
   socket.on("ROOM_KICK", (payload) => {
@@ -977,23 +1011,32 @@ io.sockets.on("connection", (socket) => {
     dCol = mod.dCol;
     if (dCol === 0 && dRow === 0) return;
 
+    // Vira mesmo se o tile à frente estiver bloqueado
+    if (dRow < 0) player.facing = "bk";
+    else if (dRow > 0) player.facing = "fr";
+    else if (dCol < 0) player.facing = "lf";
+    else if (dCol > 0) player.facing = "rt";
+
     const nextRow = player.row + dRow;
     const nextCol = player.col + dCol;
 
-    if (isBlocked(room, nextRow, nextCol)) return;
     const canPassBomb =
       typeof abilitySystem.canPassBomb === "function" &&
       abilitySystem.canPassBomb(player);
-    if (!canPassBomb && hasBombAt(room, nextRow, nextCol)) return;
-
     const canPassPlayers =
       typeof abilitySystem.canPassPlayers === "function" &&
       abilitySystem.canPassPlayers(player);
-    if (
+    const blockedByMap = isBlocked(room, nextRow, nextCol);
+    const blockedByBomb =
+      !canPassBomb && hasBombAt(room, nextRow, nextCol);
+    const blockedByPlayer =
       !canPassPlayers &&
       typeof abilitySystem.hasBlockingPlayerAt === "function" &&
-      abilitySystem.hasBlockingPlayerAt(room, nextRow, nextCol, player.id)
-    ) {
+      abilitySystem.hasBlockingPlayerAt(room, nextRow, nextCol, player.id);
+
+    if (blockedByMap || blockedByBomb || blockedByPlayer) {
+      player.lastMoveAt = Date.now();
+      emitState(room);
       return;
     }
 
@@ -1003,11 +1046,6 @@ io.sockets.on("connection", (socket) => {
     player.y = tileToPx(nextRow);
     player.frame = player.frame === 1 ? 2 : 1;
     player.lastMoveAt = Date.now();
-
-    if (dRow < 0) player.facing = "bk";
-    else if (dRow > 0) player.facing = "fr";
-    else if (dCol < 0) player.facing = "lf";
-    else if (dCol > 0) player.facing = "rt";
 
     collectPickup(room, player);
     emitState(room);

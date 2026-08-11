@@ -4,6 +4,7 @@ import CharacterSelect from "./components/CharacterSelect";
 import Game from "./components/Game";
 import Home from "./components/Home";
 import Lobby from "./components/Lobby";
+import RoomChat from "./components/RoomChat";
 import { useAuth } from "./hooks/useAuth";
 import { useGameSocket } from "./hooks/useGameSocket";
 
@@ -28,6 +29,7 @@ export default function App() {
     roomError,
     takenSprites,
     joining,
+    chatMessages,
     createRoom,
     prepareJoin,
     joinRoom,
@@ -35,10 +37,12 @@ export default function App() {
     toggleReady,
     kickPlayer,
     selectAbility,
+    sendChat,
   } = useGameSocket();
 
   const inLobby = screen === "inRoom" && gameState.phase === "lobby";
   const inGame = screen === "inRoom" && gameState.phase !== "lobby";
+  const inRoom = inLobby || inGame;
 
   const continueAsGuest = useCallback(() => {
     try {
@@ -158,6 +162,10 @@ export default function App() {
             auth.saveProfilePrefs({ abilityId });
           }}
         />
+      ) : null}
+
+      {inRoom ? (
+        <RoomChat messages={chatMessages} myId={myId} onSend={sendChat} />
       ) : null}
     </div>
   );

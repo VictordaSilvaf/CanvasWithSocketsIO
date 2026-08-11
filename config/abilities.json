@@ -67,7 +67,7 @@
     "ghost": {
       "id": "ghost",
       "name": "Fantasma",
-      "description": "Fica intangível por 1,5s e atravessa bombas e jogadores. Não atravessa paredes/blocos e não é imune a explosões.",
+      "description": "Fica intangível por 1,5s: atravessa bombas e jogadores. Não atravessa paredes ou blocos e não é imune a explosões.",
       "cooldownMs": 12000,
       "durationMs": 1500,
       "intangibility": {
@@ -75,18 +75,16 @@
         "canPassThroughPlayers": true,
         "canPassThroughSoftBlocks": false,
         "canPassThroughSolidBlocks": false,
-        "canPassThroughWalls": false,
-        "canPassThroughMapBounds": false
+        "canPassThroughWalls": false
       },
       "restrictions": {
-        "cannotActivateWhileStunned": true,
-        "cannotStack": true
+        "cannotActivateWhileStunned": true
       }
     },
     "remote_bomb": {
       "id": "remote_bomb",
       "name": "Bomba Remota",
-      "description": "Arremessa uma bomba até 2 casas à frente. Se a 2ª estiver bloqueada, coloca na 1ª. Jogadores não bloqueiam. Falha sem consumir CD se não houver espaço.",
+      "description": "Arremessa uma bomba para frente em até 2 casas. Se a segunda casa estiver bloqueada, a bomba é colocada na primeira casa disponível.",
       "cooldownMs": 10000,
       "maxThrowTiles": 2,
       "throwDirection": "player_facing",
@@ -102,12 +100,6 @@
         "blocksExistingBombs": true,
         "blocksPlayers": false,
         "blocksWalls": true
-      },
-      "behavior": {
-        "ifTile1FreeAndTile2Free": "place_at_tile_2",
-        "ifTile1FreeAndTile2Blocked": "place_at_tile_1",
-        "ifTile1Blocked": "cancel",
-        "ifDestinationOccupiedByBomb": "fallback_to_previous_tile"
       }
     }
   }
