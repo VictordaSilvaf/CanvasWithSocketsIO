@@ -19,6 +19,8 @@ export function useGameSocket() {
   const [takenSprites, setTakenSprites] = useState([]);
   const [joining, setJoining] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
+  const [publicRooms, setPublicRooms] = useState([]);
+  const [pendingRoomMeta, setPendingRoomMeta] = useState(null);
   const gameStateRef = useRef(gameState);
   const myIdRef = useRef(myId);
 
@@ -39,16 +41,26 @@ export function useGameSocket() {
     socket.on("connect", () => {
       setMyId(socket.id);
       setConnected(true);
+      socket.emit("ROOM_LIST_PUBLIC");
     });
 
     socket.on("disconnect", () => {
       setConnected(false);
     });
 
+    socket.on("ON_PUBLIC_ROOMS", (payload) => {
+      const data = JSON.parse(payload);
+      setPublicRooms(Array.isArray(data.rooms) ? data.rooms : []);
+    });
+
     socket.on("ON_ROOM_CREATED", (payload) => {
       const data = JSON.parse(payload);
       setRoomError(null);
       setPendingRoomCode(data.code);
+      setPendingRoomMeta({
+        name: data.name || null,
+        visibility: data.visibility || "public",
+      });
       setTakenSprites([]);
       setScreen("character");
     });
@@ -71,16 +83,24 @@ export function useGameSocket() {
       const data = JSON.parse(payload);
       setJoining(false);
       setPendingRoomCode(null);
+      setPendingRoomMeta(null);
       setTakenSprites([]);
       setGameState(INITIAL_STATE);
       setChatMessages([]);
       setScreen("home");
       setRoomError(data.reason || "Você foi expulso da sala.");
+      socketRef.current?.emit("ROOM_LIST_PUBLIC");
     });
 
     socket.on("ON_TAKEN_SPRITES", (payload) => {
       const data = JSON.parse(payload);
       setTakenSprites(data.takenSprites || []);
+      if (data.code && (data.name || data.visibility)) {
+        setPendingRoomMeta({
+          name: data.name || null,
+          visibility: data.visibility || "public",
+        });
+      }
     });
 
     socket.on("ON_GAME_STATE", (payload) => {
@@ -224,12 +244,16 @@ export function useGameSocket() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [movePlayer, placeBomb, useAbility]);
 
-  const createRoom = () => {
+  const createRoom = ({ name = "", visibility = "public" } = {}) => {
     setRoomError(null);
-    socketRef.current?.emit("ROOM_CREATE");
+    socketRef.current?.emit("ROOM_CREATE", { name, visibility });
   };
 
-  const prepareJoin = (code) => {
+  const refreshPublicRooms = () => {
+    socketRef.current?.emit("ROOM_LIST_PUBLIC");
+  };
+
+  const prepareJoin = (code, meta = null) => {
     const normalized = String(code || "")
       .trim()
       .toUpperCase();
@@ -239,6 +263,14 @@ export function useGameSocket() {
     }
     setRoomError(null);
     setPendingRoomCode(normalized);
+    setPendingRoomMeta(
+      meta
+        ? {
+            name: meta.name || null,
+            visibility: meta.visibility || "public",
+          }
+        : null
+    );
     setTakenSprites([]);
     setScreen("character");
   };
@@ -262,11 +294,13 @@ export function useGameSocket() {
     socketRef.current?.emit("ROOM_CANCEL");
     setRoomError(null);
     setPendingRoomCode(null);
+    setPendingRoomMeta(null);
     setTakenSprites([]);
     setJoining(false);
     setGameState(INITIAL_STATE);
     setChatMessages([]);
     setScreen("home");
+    socketRef.current?.emit("ROOM_LIST_PUBLIC");
   };
 
   const toggleReady = () => {
@@ -292,12 +326,15 @@ export function useGameSocket() {
     connected,
     screen,
     pendingRoomCode,
+    pendingRoomMeta,
     gameState,
     roomError,
     takenSprites,
     joining,
     chatMessages,
+    publicRooms,
     createRoom,
+    refreshPublicRooms,
     prepareJoin,
     joinRoom,
     backToHome,

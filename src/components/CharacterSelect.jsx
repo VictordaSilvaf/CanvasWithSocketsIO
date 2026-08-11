@@ -9,6 +9,8 @@ import RoomCodeCopy from "./RoomCodeCopy";
 
 export default function CharacterSelect({
   roomCode,
+  roomName,
+  visibility,
   takenSprites,
   roomError,
   joining,
@@ -52,6 +54,16 @@ export default function CharacterSelect({
           <h1 className="m-0 mb-1 text-2xl tracking-wide text-forest-300 sm:text-3xl">
             Seu personagem
           </h1>
+          {roomName ? (
+            <p className="m-0 mb-1 text-sm text-forest-100">
+              {roomName}
+              {visibility === "private" ? (
+                <span className="ml-2 text-[10px] uppercase tracking-wider text-forest-300">
+                  privada
+                </span>
+              ) : null}
+            </p>
+          ) : null}
           <RoomCodeCopy code={roomCode} compact className="mt-1" />
         </div>
         <button

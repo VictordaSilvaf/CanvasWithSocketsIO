@@ -32,6 +32,16 @@ export default function Lobby({
       <h1 className="m-0 mb-2 text-center text-[32px] tracking-wide text-forest-300 sm:text-[42px]">
         SupraBom
       </h1>
+      {gameState.roomName ? (
+        <p className="mb-1 text-center text-base text-forest-100">
+          {gameState.roomName}
+          {gameState.visibility === "private" ? (
+            <span className="ml-2 text-[10px] uppercase tracking-wider text-forest-300">
+              privada
+            </span>
+          ) : null}
+        </p>
+      ) : null}
       <RoomCodeCopy code={roomCode} className="mb-4" />
       <p className="mb-5 text-center text-sm text-forest-200">
         {players.length}/{MAX_PLAYERS} jogadores · mín. {MIN_PLAYERS} prontos

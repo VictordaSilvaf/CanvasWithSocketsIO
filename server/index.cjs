@@ -189,14 +189,19 @@ function generateRoomCode() {
   return code;
 }
 
-function createRoom(createdBy) {
+function createRoom(createdBy, { visibility = "public", name = "" } = {}) {
   let code = generateRoomCode();
   while (rooms[code]) {
     code = generateRoomCode();
   }
 
+  const roomName = normalizeRoomName(name) || `Sala ${code}`;
+  const isPublic = String(visibility).toLowerCase() !== "private";
+
   rooms[code] = {
     code,
+    name: roomName,
+    visibility: isPublic ? "public" : "private",
     createdBy: createdBy || null,
     hostId: createdBy || null,
     players: {},
@@ -220,6 +225,34 @@ function createRoom(createdBy) {
   };
 
   return rooms[code];
+}
+
+function normalizeRoomName(name) {
+  return String(name || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 24);
+}
+
+function listPublicRooms() {
+  return Object.values(rooms)
+    .filter(
+      (room) =>
+        room.visibility === "public" &&
+        room.phase === "lobby" &&
+        getPlayerList(room).length < MAX_PLAYERS
+    )
+    .map((room) => ({
+      code: room.code,
+      name: room.name || `Sala ${room.code}`,
+      playerCount: getPlayerList(room).length,
+      maxPlayers: MAX_PLAYERS,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+}
+
+function broadcastPublicRooms() {
+  io.emit("ON_PUBLIC_ROOMS", JSON.stringify({ rooms: listPublicRooms() }));
 }
 
 function getRoom(code) {
@@ -257,6 +290,8 @@ function emitState(room) {
     "ON_GAME_STATE",
     JSON.stringify({
       roomCode: room.code,
+      roomName: room.name || `Sala ${room.code}`,
+      visibility: room.visibility || "public",
       hostId: room.hostId,
       phase: room.phase,
       winnerId: room.winnerId,
@@ -409,6 +444,7 @@ function startGame(room) {
   room.phase = "countdown";
   room.countdown = COUNTDOWN_START_S;
   emitState(room);
+  broadcastPublicRooms();
   scheduleCountdownTick(room, COUNTDOWN_TICK_MS);
 }
 
@@ -439,6 +475,7 @@ function returnToLobby(room) {
   }
 
   emitState(room);
+  broadcastPublicRooms();
 }
 
 function checkWinCondition(room) {
@@ -669,13 +706,21 @@ function destroyRoomIfEmpty(room) {
     room.resetTimer = null;
   }
   delete rooms[room.code];
+  broadcastPublicRooms();
 }
 
 io.sockets.on("connection", (socket) => {
   socket.data.roomCode = null;
   socket.data.pendingRoomCode = null;
 
-  socket.on("ROOM_CREATE", () => {
+  socket.on("ROOM_LIST_PUBLIC", () => {
+    socket.emit(
+      "ON_PUBLIC_ROOMS",
+      JSON.stringify({ rooms: listPublicRooms() })
+    );
+  });
+
+  socket.on("ROOM_CREATE", (payload) => {
     if (socket.data.roomCode) {
       emitRoomError(socket, "Você já está em uma sala.");
       return;
@@ -691,9 +736,20 @@ io.sockets.on("connection", (socket) => {
       }
     }
 
-    const room = createRoom(socket.id);
+    const room = createRoom(socket.id, {
+      visibility: payload?.visibility,
+      name: payload?.name,
+    });
     socket.data.pendingRoomCode = room.code;
-    socket.emit("ON_ROOM_CREATED", JSON.stringify({ code: room.code }));
+    socket.emit(
+      "ON_ROOM_CREATED",
+      JSON.stringify({
+        code: room.code,
+        name: room.name,
+        visibility: room.visibility,
+      })
+    );
+    broadcastPublicRooms();
   });
 
   socket.on("ROOM_CANCEL", () => {
@@ -816,6 +872,7 @@ io.sockets.on("connection", (socket) => {
       JSON.stringify({ messages: room.chat || [] })
     );
     emitState(room);
+    broadcastPublicRooms();
   });
 
   socket.on("ROOM_CHAT", (payload) => {
@@ -879,6 +936,7 @@ io.sockets.on("connection", (socket) => {
     }
 
     emitState(room);
+    broadcastPublicRooms();
   });
 
   socket.on("ROOM_TAKEN_SPRITES", (payload) => {
@@ -895,6 +953,8 @@ io.sockets.on("connection", (socket) => {
       "ON_TAKEN_SPRITES",
       JSON.stringify({
         code: room.code,
+        name: room.name || `Sala ${room.code}`,
+        visibility: room.visibility || "public",
         takenSprites: [...takenSprites(room)],
       })
     );
@@ -938,6 +998,7 @@ io.sockets.on("connection", (socket) => {
 
     if (room.phase === "lobby") {
       emitState(room);
+      broadcastPublicRooms();
       return;
     }
 

@@ -46,6 +46,8 @@ export const SPRITE_POOL = [
 export const INITIAL_STATE = {
   phase: "lobby",
   roomCode: null,
+  roomName: null,
+  visibility: "public",
   hostId: null,
   winnerId: null,
   countdown: 0,

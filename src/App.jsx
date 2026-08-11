@@ -25,12 +25,15 @@ export default function App() {
     connected,
     screen,
     pendingRoomCode,
+    pendingRoomMeta,
     gameState,
     roomError,
     takenSprites,
     joining,
     chatMessages,
+    publicRooms,
     createRoom,
+    refreshPublicRooms,
     prepareJoin,
     joinRoom,
     backToHome,
@@ -107,16 +110,20 @@ export default function App() {
           user={auth.user}
           profile={auth.profile}
           isGuest={guest && !auth.user}
+          publicRooms={publicRooms}
           onSignOut={auth.user ? auth.signOut : undefined}
           onLogin={guest && !auth.user ? exitGuest : undefined}
           onCreateRoom={createRoom}
           onPrepareJoin={prepareJoin}
+          onRefreshPublicRooms={refreshPublicRooms}
         />
       ) : null}
 
       {screen === "character" ? (
         <CharacterSelect
           roomCode={pendingRoomCode}
+          roomName={pendingRoomMeta?.name}
+          visibility={pendingRoomMeta?.visibility}
           takenSprites={takenSprites}
           roomError={roomError}
           joining={joining}
