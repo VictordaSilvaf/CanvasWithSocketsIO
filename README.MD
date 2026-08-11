@@ -4,6 +4,12 @@ Projeto de estudo de **comunicação em tempo real** com [Socket.IO](https://soc
 
 Salas com **código**, escolha de **sprite**, **nome** e **poder**, mapa aleatório estilo Bomberman, **1 vida**, upgrades raros de alcance/bombas e vitória do **último vivo**.
 
+## Demo online
+
+**Jogar:** [https://supraboom.onrender.com/](https://supraboom.onrender.com/)
+
+Hospedado no [Render](https://render.com) (plano free). O serviço **hiberna após ~15 minutos sem tráfego**; na primeira visita (ou depois de idle) o site pode levar **cerca de 30–60 segundos** para “acordar” e carregar. Se a página ficar em branco ou demorar, aguarde e atualize.
+
 ---
 
 ## Como rodar
@@ -44,12 +50,16 @@ Máximo de **4** jogadores por sala. O jogo ocupa cerca de **90%** da tela.
 
 ### Produção
 
+Demo: [https://supraboom.onrender.com/](https://supraboom.onrender.com/) (cold start no free tier — pode demorar na primeira carga).
+
+Local / servidor próprio:
+
 ```bash
 npm run build
 npm start
 ```
 
-Sobe o Express + Socket.IO na porta **3000** servindo o build do React.
+Sobe o Express + Socket.IO na porta **3000** (ou `PORT`) servindo o build do React.
 
 ---
 
