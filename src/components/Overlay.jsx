@@ -21,21 +21,21 @@ export default function Overlay({ gameState, myId, onSelectAbility }) {
     const canPick = !isGo && !locked && typeof onSelectAbility === "function";
 
     return (
-      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-forest-950/75 px-3 py-4">
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-start gap-3 overflow-y-auto overscroll-contain bg-forest-950/80 px-2 py-3 sm:justify-center sm:gap-4 sm:px-3 sm:py-4">
         <p
           key={animKey}
           className={[
-            "m-0 min-w-32 border-2 px-8 py-5 text-center font-bold leading-none tracking-wide",
+            "m-0 min-w-24 border-2 px-6 py-4 text-center font-bold leading-none tracking-wide sm:min-w-32 sm:px-8 sm:py-5",
             isGo
-              ? "animate-go-flash border-forest-100 bg-forest-500 text-5xl text-forest-950"
-              : "animate-countdown-pop border-forest-300 bg-forest-950/90 text-6xl text-forest-100",
+              ? "animate-go-flash border-forest-100 bg-forest-500 text-4xl text-forest-950 sm:text-5xl"
+              : "animate-countdown-pop border-forest-300 bg-forest-950/90 text-5xl text-forest-100 sm:text-6xl",
           ].join(" ")}
         >
           {isGo ? "GO!" : String(countdown)}
         </p>
 
         {!isGo ? (
-          <div className="w-full max-w-xl border border-forest-600 bg-forest-950/90 px-4 py-3 shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
+          <div className="w-full max-w-xl border border-forest-600 bg-forest-950/95 px-3 py-3 shadow-[0_12px_32px_rgba(0,0,0,0.35)] sm:px-4">
             <p className="mb-1 text-center text-sm font-bold text-forest-100">
               {locked
                 ? `Poder: ${getAbility(me.abilityId)?.name}`
@@ -48,7 +48,7 @@ export default function Overlay({ gameState, myId, onSelectAbility }) {
                 : " · aguardando os outros"}
             </p>
 
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid max-h-[45dvh] gap-2 overflow-y-auto sm:max-h-none sm:grid-cols-2">
               {ABILITY_LIST.map((ability) => {
                 const active = me?.abilityId === ability.id;
                 const suggested =
@@ -65,7 +65,7 @@ export default function Overlay({ gameState, myId, onSelectAbility }) {
                         ? "border-forest-100 bg-forest-100/15 ring-1 ring-forest-400"
                         : "border-forest-600 bg-forest-900/50",
                       canPick
-                        ? "cursor-pointer hover:border-forest-400"
+                        ? "cursor-pointer hover:border-forest-400 active:bg-forest-600/30"
                         : "cursor-default opacity-80",
                       suggested ? "border-forest-400/70" : "",
                     ].join(" ")}

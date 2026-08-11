@@ -14,10 +14,10 @@ export default function Home({
   const [code, setCode] = useState("");
 
   return (
-    <div className="mx-auto mt-12 max-w-md border-2 border-forest-600 bg-forest-950/85 px-7 py-8 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+    <div className="mx-auto mt-4 w-[calc(100%-1.5rem)] max-w-md border-2 border-forest-600 bg-forest-950/85 px-4 py-6 shadow-[0_16px_40px_rgba(0,0,0,0.35)] sm:mt-12 sm:px-7 sm:py-8">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h1 className="m-0 text-[42px] tracking-wide text-forest-300">
+          <h1 className="m-0 text-[32px] tracking-wide text-forest-300 sm:text-[42px]">
             SupraBom
           </h1>
           {user ? (
@@ -91,7 +91,7 @@ export default function Home({
         onKeyDown={(e) => {
           if (e.key === "Enter") onPrepareJoin(code);
         }}
-        className="mb-4 w-full border border-forest-600 bg-forest-900 px-3.5 py-3 text-center text-lg tracking-[0.35em] text-forest-100 outline-none placeholder:tracking-normal placeholder:text-forest-300/50 focus:border-forest-400"
+        className="mb-4 w-full border border-forest-600 bg-forest-900 px-3.5 py-3 text-center text-base tracking-[0.35em] text-forest-100 outline-none placeholder:tracking-normal placeholder:text-forest-300/50 focus:border-forest-400 sm:text-lg"
       />
 
       <button

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import {
   ABILITY_ACTIVATION_KEY,
@@ -126,6 +126,52 @@ export function useGameSocket() {
     return () => clearInterval(id);
   }, [screen, pendingRoomCode]);
 
+  const movePlayer = useCallback((move) => {
+    const state = gameStateRef.current;
+    const id = myIdRef.current;
+    const socket = socketRef.current;
+    if (!socket || !state || state.phase !== "playing") return;
+    if (!move || (move.x === 0 && move.y === 0)) return;
+
+    const me = (state.players || []).find((p) => p.id === id);
+    if (!me || !me.alive) return;
+
+    const now = Date.now();
+    const clockSkew = now - (state.serverNow || now);
+    const serverAligned = now - clockSkew;
+    if (me.stunUntil && me.stunUntil > serverAligned) return;
+
+    const slowActive = me.slowUntil && me.slowUntil > serverAligned;
+    const ability = getAbility(me.abilityId);
+    const cooldown = slowActive
+      ? ability?.slowMoveCooldownMs || MOVE_COOLDOWN_MS * 2
+      : MOVE_COOLDOWN_MS;
+
+    if (now - lastMoveAt.current < cooldown) return;
+    lastMoveAt.current = now;
+    socket.emit("ON_USER_MOVE", { move });
+  }, []);
+
+  const placeBomb = useCallback(() => {
+    const state = gameStateRef.current;
+    const id = myIdRef.current;
+    const socket = socketRef.current;
+    if (!socket || !state || state.phase !== "playing") return;
+    const me = (state.players || []).find((p) => p.id === id);
+    if (!me || !me.alive) return;
+    socket.emit("ON_BOMB_PLACE");
+  }, []);
+
+  const useAbility = useCallback(() => {
+    const state = gameStateRef.current;
+    const id = myIdRef.current;
+    const socket = socketRef.current;
+    if (!socket || !state || state.phase !== "playing") return;
+    const me = (state.players || []).find((p) => p.id === id);
+    if (!me || !me.alive) return;
+    socket.emit("ON_ABILITY_USE");
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (e) => {
       const tag = e.target?.tagName;
@@ -138,17 +184,12 @@ export function useGameSocket() {
       }
 
       const state = gameStateRef.current;
-      const id = myIdRef.current;
-      const socket = socketRef.current;
-      if (!socket || !state || state.phase !== "playing") return;
-
-      const me = (state.players || []).find((p) => p.id === id);
-      if (!me || !me.alive) return;
+      if (!state || state.phase !== "playing") return;
 
       const abilityKey = state.activationKey || ABILITY_ACTIVATION_KEY || "KeyE";
       if (e.code === abilityKey) {
         e.preventDefault();
-        socket.emit("ON_ABILITY_USE");
+        useAbility();
         return;
       }
 
@@ -169,33 +210,19 @@ export function useGameSocket() {
 
       if (e.key === " " || e.code === "Space") {
         e.preventDefault();
-        socket.emit("ON_BOMB_PLACE");
+        placeBomb();
         return;
       }
 
       const move = moves[e.key];
       if (!move) return;
-
       e.preventDefault();
-      const now = Date.now();
-      const clockSkew = now - (state.serverNow || now);
-      const serverAligned = now - clockSkew;
-      if (me.stunUntil && me.stunUntil > serverAligned) return;
-
-      const slowActive = me.slowUntil && me.slowUntil > serverAligned;
-      const ability = getAbility(me.abilityId);
-      const cooldown = slowActive
-        ? ability?.slowMoveCooldownMs || MOVE_COOLDOWN_MS * 2
-        : MOVE_COOLDOWN_MS;
-
-      if (now - lastMoveAt.current < cooldown) return;
-      lastMoveAt.current = now;
-      socket.emit("ON_USER_MOVE", { move });
+      movePlayer(move);
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [movePlayer, placeBomb, useAbility]);
 
   const createRoom = () => {
     setRoomError(null);
@@ -278,5 +305,8 @@ export function useGameSocket() {
     selectAbility,
     kickPlayer,
     sendChat,
+    movePlayer,
+    placeBomb,
+    useAbility,
   };
 }

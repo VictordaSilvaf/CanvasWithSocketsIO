@@ -38,6 +38,9 @@ export default function App() {
     kickPlayer,
     selectAbility,
     sendChat,
+    movePlayer,
+    placeBomb,
+    useAbility,
   } = useGameSocket();
 
   const inLobby = screen === "inRoom" && gameState.phase === "lobby";
@@ -146,6 +149,9 @@ export default function App() {
         <Game
           gameState={gameState}
           myId={myId}
+          onMove={movePlayer}
+          onBomb={placeBomb}
+          onAbility={useAbility}
           onSelectAbility={(abilityId) => {
             selectAbility(abilityId);
             try {

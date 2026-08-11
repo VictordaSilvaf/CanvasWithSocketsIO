@@ -30,21 +30,22 @@ export default function Hud({ gameState, myId }) {
   if (me?.ghostUntil > serverAligned) statuses.push("fantasma");
 
   return (
-    <div className="flex w-[90vw] max-w-[1100px] flex-wrap items-center justify-between gap-3 border border-forest-600 bg-forest-950/80 px-4 py-2 text-sm text-forest-100">
-      <div className="flex flex-wrap gap-4">
+    <div className="flex w-full max-w-[1100px] flex-wrap items-center justify-between gap-x-3 gap-y-1 border border-forest-600 bg-forest-950/80 px-2 py-1.5 text-[11px] text-forest-100 sm:px-4 sm:py-2 sm:text-sm">
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
         <span>Alcance: {me?.bombRange ?? 1}</span>
         <span>Bombas: {me?.maxBombs ?? 1}</span>
         <span>Vivos: {alive}</span>
-        <span>Vitórias: {me?.wins ?? 0}</span>
+        <span className="hidden xs:inline sm:inline">Vitórias: {me?.wins ?? 0}</span>
         <span>
-          Poder: {ability?.name || "—"} [{keyLabel}]
+          Poder: {ability?.name || "—"}
+          <span className="hidden sm:inline"> [{keyLabel}]</span>
           {cdLeft > 0 ? ` · CD ${cdLeft}s` : " · pronto"}
         </span>
         {statuses.length ? (
           <span className="text-[#ffb4a2]">{statuses.join(" · ")}</span>
         ) : null}
       </div>
-      <div className="flex flex-wrap gap-3 text-xs text-forest-200">
+      <div className="hidden flex-wrap gap-3 text-xs text-forest-200 sm:flex">
         {ranked.map((p) => (
           <span key={p.id} className={p.id === myId ? "text-forest-100" : ""}>
             {p.name}: {p.wins || 0}

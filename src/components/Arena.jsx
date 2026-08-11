@@ -198,7 +198,7 @@ function AbilityFx({ abilityFx, tile }) {
   });
 }
 
-export default function Arena({ gameState, myId }) {
+export default function Arena({ gameState, myId, compactBottom = false }) {
   const tile = gameState.tile || TILE;
   const canvasSize = gameState.canvasSize || 450;
   const frameSize = canvasSize + FRAME_PAD;
@@ -210,9 +210,16 @@ export default function Arena({ gameState, myId }) {
     if (!el) return;
 
     const update = () => {
-      const maxW = window.innerWidth * 0.9;
-      const maxH = window.innerHeight * 0.9;
-      const next = Math.min(maxW / frameSize, maxH / frameSize);
+      const mobile =
+        window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+      const maxW = window.innerWidth * (mobile ? 0.96 : 0.9);
+      const heightRatio = mobile
+        ? compactBottom
+          ? 0.46
+          : 0.72
+        : 0.9;
+      const maxH = window.innerHeight * heightRatio;
+      const next = Math.min(maxW / frameSize, maxH / frameSize, 1.15);
       setScale(Number.isFinite(next) && next > 0 ? next : 1);
     };
 
@@ -220,11 +227,13 @@ export default function Arena({ gameState, myId }) {
     const ro = new ResizeObserver(update);
     ro.observe(document.documentElement);
     window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
     return () => {
       ro.disconnect();
       window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
     };
-  }, [frameSize]);
+  }, [frameSize, compactBottom]);
 
   return (
     <div

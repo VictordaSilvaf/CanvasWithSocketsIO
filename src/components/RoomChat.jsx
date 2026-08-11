@@ -1,14 +1,39 @@
 import { useEffect, useRef, useState } from "react";
 
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 767px)").matches
+      : false
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const onChange = () => setMobile(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return mobile;
+}
+
 export default function RoomChat({
   messages,
   myId,
   onSend,
   collapsed = false,
 }) {
+  const isMobile = useIsMobile();
   const [text, setText] = useState("");
-  const [open, setOpen] = useState(!collapsed);
+  const [open, setOpen] = useState(!collapsed && !isMobile);
   const listRef = useRef(null);
+  const wasMobile = useRef(isMobile);
+
+  useEffect(() => {
+    if (isMobile && !wasMobile.current) setOpen(false);
+    wasMobile.current = isMobile;
+  }, [isMobile]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -29,13 +54,13 @@ export default function RoomChat({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed right-3 top-1/2 z-30 -translate-y-1/2 cursor-pointer border-2 border-forest-600 bg-forest-950/95 px-2 py-4 text-xs font-bold uppercase tracking-wider text-forest-100 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:bg-forest-900"
+        className="fixed right-2 top-[max(0.75rem,env(safe-area-inset-top))] z-30 cursor-pointer border-2 border-forest-600 bg-forest-950/95 px-3 py-2 text-xs font-bold uppercase tracking-wider text-forest-100 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:bg-forest-900 md:right-3 md:top-1/2 md:-translate-y-1/2 md:px-2 md:py-4"
         title="Abrir chat"
       >
         Chat
         {messages?.length ? (
-          <span className="mt-1 block text-[10px] font-normal text-forest-300">
-            {messages.length}
+          <span className="ml-1 inline text-[10px] font-normal text-forest-300 md:ml-0 md:mt-1 md:block">
+            ({messages.length})
           </span>
         ) : null}
       </button>
@@ -43,7 +68,7 @@ export default function RoomChat({
   }
 
   return (
-    <aside className="fixed right-0 top-0 z-30 flex h-dvh w-[min(100vw,320px)] flex-col border-l-2 border-forest-600 bg-forest-950/95 shadow-[-8px_0_24px_rgba(0,0,0,0.35)]">
+    <aside className="fixed inset-x-0 bottom-0 z-40 flex max-h-[70dvh] flex-col border-t-2 border-forest-600 bg-forest-950/98 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:h-dvh md:w-[min(100vw,320px)] md:border-l-2 md:border-t-0 md:shadow-[-8px_0_24px_rgba(0,0,0,0.35)]">
       <div className="flex items-center justify-between border-b border-forest-600 px-3 py-2.5">
         <div>
           <p className="m-0 text-sm font-bold uppercase tracking-wider text-forest-100">
@@ -62,7 +87,7 @@ export default function RoomChat({
 
       <div
         ref={listRef}
-        className="flex-1 space-y-2 overflow-y-auto px-3 py-3"
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-3"
       >
         {(messages || []).length === 0 ? (
           <p className="text-center text-xs text-forest-400">
@@ -103,7 +128,7 @@ export default function RoomChat({
 
       <form
         onSubmit={submit}
-        className="border-t border-forest-600 p-3"
+        className="border-t border-forest-600 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
         <div className="flex gap-2">
           <input
@@ -111,9 +136,10 @@ export default function RoomChat({
             value={text}
             maxLength={120}
             autoComplete="off"
+            enterKeyHint="send"
             placeholder="Mensagem…"
             onChange={(e) => setText(e.target.value)}
-            className="min-w-0 flex-1 border border-forest-600 bg-forest-900 px-3 py-2 text-sm text-forest-100 outline-none placeholder:text-forest-400 focus:border-forest-400"
+            className="min-w-0 flex-1 border border-forest-600 bg-forest-900 px-3 py-2.5 text-base text-forest-100 outline-none placeholder:text-forest-400 focus:border-forest-400 md:text-sm"
           />
           <button
             type="submit"

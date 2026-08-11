@@ -46,10 +46,10 @@ export default function CharacterSelect({
   };
 
   return (
-    <div className="mx-auto mt-6 max-w-2xl border-2 border-forest-600 bg-forest-950/85 px-6 py-7 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+    <div className="mx-auto mt-3 w-[calc(100%-1rem)] max-w-2xl border-2 border-forest-600 bg-forest-950/85 px-3 py-5 shadow-[0_16px_40px_rgba(0,0,0,0.35)] sm:mt-6 sm:px-6 sm:py-7">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="m-0 mb-1 text-3xl tracking-wide text-forest-300">
+          <h1 className="m-0 mb-1 text-2xl tracking-wide text-forest-300 sm:text-3xl">
             Seu personagem
           </h1>
           <RoomCodeCopy code={roomCode} compact className="mt-1" />
