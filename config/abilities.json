@@ -1,0 +1,114 @@
+{
+  "activationKey": "KeyZ",
+  "activationKeyLabel": "Z",
+  "baseMoveCooldownMs": 120,
+  "projectileTickMs": 50,
+  "selection": {
+    "maxAbilitiesPerPlayer": 1
+  },
+  "abilities": {
+    "ice_ray": {
+      "id": "ice_ray",
+      "name": "Raio de gelo",
+      "description": "Lança uma bola de gelo. Ao acertar um inimigo, ele fica mais lento por alguns segundos.",
+      "cooldownMs": 8000,
+      "projectileSpeedTilesPerSec": 8,
+      "maxRangeTiles": 6,
+      "slowDurationMs": 2500,
+      "slowMoveCooldownMs": 240,
+      "stackable": false,
+      "refreshDurationOnHit": true
+    },
+    "local_blast": {
+      "id": "local_blast",
+      "name": "Explosão localizada",
+      "description": "Explode blocos moles ao redor. Empurra inimigos e, se eles baterem em uma parede ou obstáculo, recebem um stun curto.",
+      "cooldownMs": 10000,
+      "radiusTiles": 2,
+      "stunMs": 800,
+      "pushTiles": 1,
+      "fxDurationMs": 400,
+      "knockback": {
+        "enabled": true,
+        "maxTiles": 1,
+        "stopsOnObstacle": true,
+        "stunOnBlockedPush": true
+      }
+    },
+    "confusion": {
+      "id": "confusion",
+      "name": "Confusão",
+      "description": "Dispara um raio que inverte os controles direcionais do inimigo por alguns segundos.",
+      "cooldownMs": 9000,
+      "projectileSpeedTilesPerSec": 10,
+      "maxRangeTiles": 5,
+      "durationMs": 3000,
+      "maxTargets": 1,
+      "stackable": false,
+      "refreshDurationOnHit": true,
+      "immunityAfterEffectMs": 2000,
+      "invertControls": {
+        "up": "down",
+        "down": "up",
+        "left": "right",
+        "right": "left"
+      }
+    },
+    "miner": {
+      "id": "miner",
+      "name": "Minerador",
+      "description": "Quebra imediatamente o bloco mole que estiver diretamente à sua frente.",
+      "cooldownMs": 6000,
+      "requiresAdjacentSoft": true,
+      "rangeTiles": 1,
+      "affectsPlayers": false,
+      "affectsSolidBlocks": false
+    },
+    "ghost": {
+      "id": "ghost",
+      "name": "Fantasma",
+      "description": "Fica intangível por 1,5s e atravessa bombas e jogadores. Não atravessa paredes/blocos e não é imune a explosões.",
+      "cooldownMs": 12000,
+      "durationMs": 1500,
+      "intangibility": {
+        "canPassThroughBombs": true,
+        "canPassThroughPlayers": true,
+        "canPassThroughSoftBlocks": false,
+        "canPassThroughSolidBlocks": false,
+        "canPassThroughWalls": false,
+        "canPassThroughMapBounds": false
+      },
+      "restrictions": {
+        "cannotActivateWhileStunned": true,
+        "cannotStack": true
+      }
+    },
+    "remote_bomb": {
+      "id": "remote_bomb",
+      "name": "Bomba Remota",
+      "description": "Arremessa uma bomba até 2 casas à frente. Se a 2ª estiver bloqueada, coloca na 1ª. Jogadores não bloqueiam. Falha sem consumir CD se não houver espaço.",
+      "cooldownMs": 10000,
+      "maxThrowTiles": 2,
+      "throwDirection": "player_facing",
+      "placement": {
+        "checkTilesSequentially": true,
+        "preferFarthestValidTile": true,
+        "fallbackToPreviousTile": true,
+        "requiresAtLeastOneFreeTile": true
+      },
+      "obstacles": {
+        "blocksSolidBlocks": true,
+        "blocksSoftBlocks": true,
+        "blocksExistingBombs": true,
+        "blocksPlayers": false,
+        "blocksWalls": true
+      },
+      "behavior": {
+        "ifTile1FreeAndTile2Free": "place_at_tile_2",
+        "ifTile1FreeAndTile2Blocked": "place_at_tile_1",
+        "ifTile1Blocked": "cancel",
+        "ifDestinationOccupiedByBomb": "fallback_to_previous_tile"
+      }
+    }
+  }
+}

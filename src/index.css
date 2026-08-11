@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Trebuchet MS", "Segoe UI", sans-serif;
+  --color-forest-950: #081c15;
+  --color-forest-900: #1b4332;
+  --color-forest-700: #2d6a4f;
+  --color-forest-600: #40916c;
+  --color-forest-500: #52b788;
+  --color-forest-400: #74c69d;
+  --color-forest-300: #95d5b2;
+  --color-forest-200: #b7e4c7;
+  --color-forest-100: #d8f3dc;
+  --animate-bomb-pulse: bomb-pulse 0.45s ease-in-out infinite alternate;
+  --animate-pickup-bob: pickup-bob 0.8s ease-in-out infinite alternate;
+  --animate-explode: explode-flash 0.6s ease-out forwards;
+  --animate-countdown-pop: countdown-pop 0.45s ease-out;
+  --animate-go-flash: go-flash 0.7s ease-out;
+}
+
+@keyframes bomb-pulse {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pickup-bob {
+  from {
+    transform: translateY(1px);
+  }
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes explode-flash {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes countdown-pop {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.35;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes go-flash {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  color: #f1faee;
+  background:
+    radial-gradient(circle at top, var(--color-forest-700) 0%, transparent 55%),
+    linear-gradient(
+      160deg,
+      var(--color-forest-950) 0%,
+      var(--color-forest-900) 45%,
+      var(--color-forest-950) 100%
+    );
+}
