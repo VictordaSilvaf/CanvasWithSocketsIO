@@ -99,11 +99,13 @@ export default function Lobby({
               ].join(" ")}
             >
               <div className="flex min-w-0 items-center gap-3">
-                <img
-                  src={spriteUrl(player.sprite, "fr", 1)}
-                  alt={player.sprite}
-                  className="h-9 w-9 shrink-0 object-contain [image-rendering:pixelated]"
-                />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-forest-600/40 bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]">
+                  <img
+                    src={spriteUrl(player.sprite, "fr", 1)}
+                    alt={player.sprite}
+                    className="h-8 w-8 object-contain [image-rendering:pixelated]"
+                  />
+                </div>
                 <div className="min-w-0">
                   <span className="block truncate text-[15px]">
                     {player.name}
