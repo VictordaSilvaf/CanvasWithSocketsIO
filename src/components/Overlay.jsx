@@ -86,6 +86,21 @@ export default function Overlay({ gameState, myId, onSelectAbility }) {
     );
   }
 
+  if (phase === "playing") {
+    const me = (players || []).find((p) => p.id === myId);
+    if (me && me.alive === false) {
+      return (
+        <div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center px-2 sm:top-4">
+          <div className="border-2 border-forest-500 bg-forest-950/90 px-4 py-2 text-center shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+            <p className="m-0 text-sm font-bold uppercase tracking-wider text-forest-100">
+              Você morreu — assistindo
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
+
   if (phase !== "gameover") return null;
 
   const winner = players.find((p) => p.id === winnerId);

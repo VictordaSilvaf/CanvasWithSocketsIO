@@ -3,6 +3,7 @@ import AuthScreen from "./components/AuthScreen";
 import CharacterSelect from "./components/CharacterSelect";
 import Game from "./components/Game";
 import Home from "./components/Home";
+import Leaderboard from "./components/Leaderboard";
 import Lobby from "./components/Lobby";
 import RoomChat from "./components/RoomChat";
 import { useAuth } from "./hooks/useAuth";
@@ -19,6 +20,7 @@ export default function App() {
       return false;
     }
   });
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const {
     myId,
@@ -37,6 +39,7 @@ export default function App() {
     prepareJoin,
     joinRoom,
     backToHome,
+    leaveRoom,
     toggleReady,
     kickPlayer,
     selectAbility,
@@ -103,7 +106,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      {screen === "home" ? (
+      {screen === "home" && showLeaderboard ? (
+        <Leaderboard onBack={() => setShowLeaderboard(false)} />
+      ) : null}
+
+      {screen === "home" && !showLeaderboard ? (
         <Home
           connected={connected}
           roomError={roomError}
@@ -116,6 +123,7 @@ export default function App() {
           onCreateRoom={createRoom}
           onPrepareJoin={prepareJoin}
           onRefreshPublicRooms={refreshPublicRooms}
+          onOpenLeaderboard={() => setShowLeaderboard(true)}
         />
       ) : null}
 
@@ -149,6 +157,7 @@ export default function App() {
           roomError={roomError}
           onToggleReady={toggleReady}
           onKick={kickPlayer}
+          onLeave={leaveRoom}
         />
       ) : null}
 
@@ -156,6 +165,7 @@ export default function App() {
         <Game
           gameState={gameState}
           myId={myId}
+          onLeave={leaveRoom}
           onMove={movePlayer}
           onBomb={placeBomb}
           onAbility={useAbility}

@@ -68,7 +68,13 @@ export default function RoomChat({
   }
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-40 flex max-h-[70dvh] flex-col border-t-2 border-forest-600 bg-forest-950/98 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:h-dvh md:w-[min(100vw,320px)] md:border-l-2 md:border-t-0 md:shadow-[-8px_0_24px_rgba(0,0,0,0.35)]">
+    <aside
+      className={[
+        "fixed z-40 flex flex-col border-forest-600 bg-forest-950/98",
+        "inset-x-0 bottom-[calc(7.5rem+env(safe-area-inset-bottom))] max-h-[min(55dvh,calc(100dvh-9rem))] border-t-2 shadow-[0_-8px_24px_rgba(0,0,0,0.35)]",
+        "md:inset-y-0 md:bottom-0 md:left-auto md:right-0 md:max-h-none md:h-dvh md:w-[min(100vw,320px)] md:border-l-2 md:border-t-0 md:shadow-[-8px_0_24px_rgba(0,0,0,0.35)]",
+      ].join(" ")}
+    >
       <div className="flex items-center justify-between border-b border-forest-600 px-3 py-2.5">
         <div>
           <p className="m-0 text-sm font-bold uppercase tracking-wider text-forest-100">
@@ -128,7 +134,7 @@ export default function RoomChat({
 
       <form
         onSubmit={submit}
-        className="border-t border-forest-600 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        className="border-t border-forest-600 p-3 md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
         <div className="flex gap-2">
           <input

@@ -119,7 +119,11 @@ const {
   verifyUserAccessToken,
   upsertProfilePrefs,
   recordMatchResult,
+  getLeaderboard,
 } = require("./supabase.cjs");
+
+const { normalizeRoomName, filterPublicRooms } = require("./roomHelpers.cjs");
+const roomStore = require("./roomStore.cjs");
 
 app.use(express.static(distDir));
 app.use("/assets", express.static(path.join(rootDir, "public/assets")));
@@ -127,6 +131,17 @@ app.use("/config", express.static(path.join(rootDir, "config")));
 
 app.get("/api/abilities", (_req, res) => {
   res.json(abilitiesConfig);
+});
+
+app.get("/api/leaderboard", async (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 20;
+    const rows = await getLeaderboard(limit);
+    res.json({ rows });
+  } catch (err) {
+    console.warn("[api] leaderboard:", err.message);
+    res.status(500).json({ rows: [], error: "Falha ao carregar ranking." });
+  }
 });
 
 app.get("*", (req, res, next) => {
@@ -227,32 +242,16 @@ function createRoom(createdBy, { visibility = "public", name = "" } = {}) {
   return rooms[code];
 }
 
-function normalizeRoomName(name) {
-  return String(name || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .slice(0, 24);
-}
-
 function listPublicRooms() {
-  return Object.values(rooms)
-    .filter(
-      (room) =>
-        room.visibility === "public" &&
-        room.phase === "lobby" &&
-        getPlayerList(room).length < MAX_PLAYERS
-    )
-    .map((room) => ({
-      code: room.code,
-      name: room.name || `Sala ${room.code}`,
-      playerCount: getPlayerList(room).length,
-      maxPlayers: MAX_PLAYERS,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  return filterPublicRooms(rooms, { maxPlayers: MAX_PLAYERS });
 }
 
 function broadcastPublicRooms() {
   io.emit("ON_PUBLIC_ROOMS", JSON.stringify({ rooms: listPublicRooms() }));
+}
+
+function persistRoom(room) {
+  roomStore.scheduleSaveRoom(room);
 }
 
 function getRoom(code) {
@@ -334,6 +333,7 @@ function emitState(room) {
       abilityFx: room.abilityFx || [],
     })
   );
+  persistRoom(room);
 }
 
 function clearCountdownTimer(room) {
@@ -345,10 +345,12 @@ function clearCountdownTimer(room) {
 
 function scheduleCountdownTick(room, delayMs = COUNTDOWN_TICK_MS) {
   clearCountdownTimer(room);
+  room.countdownEndsAt = Date.now() + delayMs;
   room.countdownTimer = setTimeout(
     () => runCountdownTick(room.code),
     delayMs
   );
+  persistRoom(room);
 }
 
 function assignMissingAbilities(room) {
@@ -500,10 +502,13 @@ function checkWinCondition(room) {
   }).catch((err) => console.warn("[supabase] record match:", err.message));
 
   if (room.resetTimer) clearTimeout(room.resetTimer);
+  room.resetAt = Date.now() + GAMEOVER_RESET_MS;
   room.resetTimer = setTimeout(() => {
     room.resetTimer = null;
+    room.resetAt = null;
     if (rooms[room.code]) returnToLobby(room);
   }, GAMEOVER_RESET_MS);
+  persistRoom(room);
 }
 
 function removePlayerFromRoom(room, playerId, { kicked = false } = {}) {
@@ -524,6 +529,33 @@ function removePlayerFromRoom(room, playerId, { kicked = false } = {}) {
   if (room.hostId === playerId) {
     room.hostId = null;
     ensureHost(room);
+  }
+}
+
+/** After a player leaves mid-session (leave or disconnect). */
+function afterPlayerLeftRoom(room, { wasPlaying, wasCountdown }) {
+  if (getPlayerList(room).length === 0) {
+    destroyRoomIfEmpty(room);
+    return;
+  }
+
+  if (room.phase === "lobby") {
+    emitState(room);
+    broadcastPublicRooms();
+    return;
+  }
+
+  if (wasCountdown) {
+    clearCountdownTimer(room);
+    returnToLobby(room);
+    return;
+  }
+
+  if (wasPlaying) {
+    checkWinCondition(room);
+    emitState(room);
+  } else if (room.phase === "gameover") {
+    emitState(room);
   }
 }
 
@@ -567,6 +599,7 @@ function placeBombAt(room, player, row, col) {
   if (isBlocked(room, row, col)) return null;
 
   const bombId = `bomb-${++room.bombSeq}`;
+  const explodeAt = Date.now() + BOMB_FUSE_MS;
   const bomb = {
     id: bombId,
     ownerId: player.id,
@@ -577,9 +610,11 @@ function placeBombAt(room, player, row, col) {
     range: player.bombRange,
     state: "ticking",
     blast: [],
+    explodeAt,
   };
   room.bombs[bombId] = bomb;
   setTimeout(() => explodeBomb(room.code, bombId), BOMB_FUSE_MS);
+  persistRoom(room);
   return bomb;
 }
 
@@ -705,7 +740,9 @@ function destroyRoomIfEmpty(room) {
     clearTimeout(room.resetTimer);
     room.resetTimer = null;
   }
-  delete rooms[room.code];
+  const code = room.code;
+  delete rooms[code];
+  roomStore.deleteRoom(code).catch(() => {});
   broadcastPublicRooms();
 }
 
@@ -760,6 +797,104 @@ io.sockets.on("connection", (socket) => {
     if (room && getPlayerList(room).length === 0) {
       destroyRoomIfEmpty(room);
     }
+  });
+
+  socket.on("ROOM_LEAVE", () => {
+    const roomCode = socket.data.roomCode;
+    if (!roomCode) return;
+
+    const room = getRoom(roomCode);
+    if (!room) {
+      socket.data.roomCode = null;
+      return;
+    }
+
+    const wasPlaying = room.phase === "playing";
+    const wasCountdown = room.phase === "countdown";
+    removePlayerFromRoom(room, socket.id);
+    afterPlayerLeftRoom(room, { wasPlaying, wasCountdown });
+  });
+
+  socket.on("ROOM_REJOIN", async (payload) => {
+    if (socket.data.roomCode) {
+      emitRoomError(socket, "Você já está em uma sala.");
+      return;
+    }
+
+    const code = String(payload?.code || "")
+      .trim()
+      .toUpperCase();
+    const name = normalizeName(payload?.name);
+    const sprite = String(payload?.sprite || "").trim();
+    const accessToken = String(payload?.accessToken || "").trim();
+
+    const room = getRoom(code);
+    if (!room) {
+      emitRoomError(socket, "Sala inexistente ou expirou.");
+      return;
+    }
+
+    let user = null;
+    if (accessToken) {
+      user = await verifyUserAccessToken(accessToken);
+    }
+
+    const players = getPlayerList(room);
+    let oldPlayer = null;
+    let oldId = null;
+
+    if (user?.id) {
+      oldPlayer = players.find((p) => p.userId === user.id);
+    }
+    if (!oldPlayer && name && sprite) {
+      oldPlayer = players.find(
+        (p) =>
+          !io.sockets.sockets.get(p.id) &&
+          p.name === name &&
+          p.sprite === sprite
+      );
+    }
+
+    if (!oldPlayer) {
+      emitRoomError(socket, "Não foi possível retornar à sala.");
+      return;
+    }
+
+    oldId = oldPlayer.id;
+    if (oldId === socket.id) {
+      socket.join(room.code);
+      socket.data.roomCode = room.code;
+      socket.emit("ON_ROOM_JOINED", JSON.stringify({ code: room.code }));
+      socket.emit(
+        "ON_CHAT_HISTORY",
+        JSON.stringify({ messages: room.chat || [] })
+      );
+      emitState(room);
+      return;
+    }
+
+    if (io.sockets.sockets.get(oldId)) {
+      emitRoomError(socket, "Essa conta já está conectada na sala.");
+      return;
+    }
+
+    delete room.players[oldId];
+    oldPlayer.id = socket.id;
+    room.players[socket.id] = oldPlayer;
+    if (room.hostId === oldId) room.hostId = socket.id;
+
+    socket.join(room.code);
+    socket.data.roomCode = room.code;
+    socket.data.pendingRoomCode = null;
+    socket.data.userId = user?.id || oldPlayer.userId || null;
+
+    socket.emit("ON_ROOM_JOINED", JSON.stringify({ code: room.code }));
+    socket.emit(
+      "ON_CHAT_HISTORY",
+      JSON.stringify({ messages: room.chat || [] })
+    );
+    emitState(room);
+    broadcastPublicRooms();
   });
 
   socket.on("ROOM_JOIN", async (payload) => {
@@ -991,29 +1126,7 @@ io.sockets.on("connection", (socket) => {
       ensureHost(room);
     }
 
-    if (getPlayerList(room).length === 0) {
-      destroyRoomIfEmpty(room);
-      return;
-    }
-
-    if (room.phase === "lobby") {
-      emitState(room);
-      broadcastPublicRooms();
-      return;
-    }
-
-    if (wasCountdown) {
-      clearCountdownTimer(room);
-      returnToLobby(room);
-      return;
-    }
-
-    if (wasPlaying) {
-      checkWinCondition(room);
-      emitState(room);
-    } else if (room.phase === "gameover") {
-      emitState(room);
-    }
+    afterPlayerLeftRoom(room, { wasPlaying, wasCountdown });
   });
 
   socket.on("LOBBY_TOGGLE_READY", () => {
@@ -1132,6 +1245,66 @@ io.sockets.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, HOST, () =>
-  console.log(`listening on http://${HOST}:${PORT}`)
-);
+function restoreRoomTimers(room) {
+  room.countdownTimer = null;
+  room.resetTimer = null;
+  room.projectileTimer = null;
+
+  const now = Date.now();
+
+  for (const bomb of Object.values(room.bombs || {})) {
+    if (bomb.state !== "ticking") continue;
+    const delay = Math.max(0, (bomb.explodeAt || now) - now);
+    setTimeout(() => explodeBomb(room.code, bomb.id), delay);
+  }
+
+  if (room.phase === "countdown") {
+    const delay = Math.max(0, (room.countdownEndsAt || now) - now);
+    scheduleCountdownTick(room, delay || COUNTDOWN_TICK_MS);
+  }
+
+  if (room.phase === "gameover" && room.resetAt) {
+    const delay = Math.max(0, room.resetAt - now);
+    room.resetTimer = setTimeout(() => {
+      room.resetTimer = null;
+      room.resetAt = null;
+      if (rooms[room.code]) returnToLobby(room);
+    }, delay);
+  }
+}
+
+async function boot() {
+  await roomStore.initRoomStore();
+  const snapshots = await roomStore.loadAllRooms();
+  for (const snap of snapshots) {
+    if (!snap?.code || rooms[snap.code]) continue;
+    rooms[snap.code] = {
+      ...snap,
+      players: snap.players || {},
+      bombs: snap.bombs || {},
+      pickups: snap.pickups || {},
+      projectiles: snap.projectiles || {},
+      abilityFx: snap.abilityFx || [],
+      chat: snap.chat || [],
+      countdownTimer: null,
+      resetTimer: null,
+      projectileTimer: null,
+    };
+    restoreRoomTimers(rooms[snap.code]);
+  }
+  if (snapshots.length) {
+    console.log(`[redis] restauradas ${snapshots.length} sala(s).`);
+    broadcastPublicRooms();
+  }
+
+  server.listen(PORT, HOST, () =>
+    console.log(`listening on http://${HOST}:${PORT}`)
+  );
+}
+
+boot().catch((err) => {
+  console.error("[boot]", err);
+  server.listen(PORT, HOST, () =>
+    console.log(`listening on http://${HOST}:${PORT} (sem redis)`)
+  );
+});

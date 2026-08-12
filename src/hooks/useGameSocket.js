@@ -7,9 +7,38 @@ import {
   getAbility,
 } from "../constants";
 
+const REJOIN_KEY = "suprabom:rejoin";
+
+function readRejoin() {
+  try {
+    const raw = sessionStorage.getItem(REJOIN_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function writeRejoin(data) {
+  try {
+    sessionStorage.setItem(REJOIN_KEY, JSON.stringify(data));
+  } catch {
+    // ignore
+  }
+}
+
+function clearRejoin() {
+  try {
+    sessionStorage.removeItem(REJOIN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export function useGameSocket() {
   const socketRef = useRef(null);
   const lastMoveAt = useRef(0);
+  const rejoinAttempted = useRef(false);
   const [myId, setMyId] = useState(null);
   const [connected, setConnected] = useState(false);
   const [screen, setScreen] = useState("home");
@@ -42,10 +71,24 @@ export function useGameSocket() {
       setMyId(socket.id);
       setConnected(true);
       socket.emit("ROOM_LIST_PUBLIC");
+
+      if (!rejoinAttempted.current) {
+        rejoinAttempted.current = true;
+        const saved = readRejoin();
+        if (saved?.code && saved?.name && saved?.sprite) {
+          socket.emit("ROOM_REJOIN", {
+            code: saved.code,
+            name: saved.name,
+            sprite: saved.sprite,
+            accessToken: saved.accessToken || null,
+          });
+        }
+      }
     });
 
     socket.on("disconnect", () => {
       setConnected(false);
+      rejoinAttempted.current = false;
     });
 
     socket.on("ON_PUBLIC_ROOMS", (payload) => {
@@ -77,10 +120,14 @@ export function useGameSocket() {
       const data = JSON.parse(payload);
       setJoining(false);
       setRoomError(data.reason || "Não foi possível entrar na sala.");
+      if (String(data.reason || "").includes("retornar")) {
+        clearRejoin();
+      }
     });
 
     socket.on("ON_KICKED", (payload) => {
       const data = JSON.parse(payload);
+      clearRejoin();
       setJoining(false);
       setPendingRoomCode(null);
       setPendingRoomMeta(null);
@@ -282,6 +329,12 @@ export function useGameSocket() {
     }
     setJoining(true);
     setRoomError(null);
+    writeRejoin({
+      code: pendingRoomCode,
+      name,
+      sprite,
+      accessToken: accessToken || null,
+    });
     socketRef.current?.emit("ROOM_JOIN", {
       code: pendingRoomCode,
       name,
@@ -291,7 +344,22 @@ export function useGameSocket() {
   };
 
   const backToHome = () => {
+    clearRejoin();
     socketRef.current?.emit("ROOM_CANCEL");
+    setRoomError(null);
+    setPendingRoomCode(null);
+    setPendingRoomMeta(null);
+    setTakenSprites([]);
+    setJoining(false);
+    setGameState(INITIAL_STATE);
+    setChatMessages([]);
+    setScreen("home");
+    socketRef.current?.emit("ROOM_LIST_PUBLIC");
+  };
+
+  const leaveRoom = () => {
+    clearRejoin();
+    socketRef.current?.emit("ROOM_LEAVE");
     setRoomError(null);
     setPendingRoomCode(null);
     setPendingRoomMeta(null);
@@ -338,6 +406,7 @@ export function useGameSocket() {
     prepareJoin,
     joinRoom,
     backToHome,
+    leaveRoom,
     toggleReady,
     selectAbility,
     kickPlayer,

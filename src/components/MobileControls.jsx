@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ChevronUp,
 } from "lucide-react";
+import { sfx } from "../sounds";
 
 const DIRS = [
   {
@@ -64,6 +65,9 @@ export default function MobileControls({
   const skew = now - (serverNow || now);
   const serverAligned = now - skew;
   const onCooldown = abilityCooldownUntil > serverAligned;
+  const cdLeft = onCooldown
+    ? Math.max(1, Math.ceil((abilityCooldownUntil - serverAligned) / 1000))
+    : 0;
 
   function stopHold() {
     if (holdRef.current) {
@@ -106,6 +110,15 @@ export default function MobileControls({
     onContextMenu: preventSelect,
   });
 
+  const onAbilityTap = (e) => {
+    e.preventDefault();
+    if (onCooldown) {
+      sfx.abilityCooldown();
+      return;
+    }
+    onAbility?.();
+  };
+
   return (
     <div
       className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex touch-none select-none items-end justify-between gap-3 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
@@ -138,12 +151,13 @@ export default function MobileControls({
           aria-label="Usar poder"
           aria-disabled={onCooldown}
           className={[
-            "flex h-14 w-14 touch-none select-none items-center justify-center overflow-hidden rounded-full border-2 shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-colors",
+            "relative flex h-14 w-14 touch-none select-none items-center justify-center overflow-hidden rounded-full border-2 shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-colors",
             onCooldown
               ? "border-zinc-500 bg-zinc-600/90 opacity-70"
               : "border-white bg-white active:bg-forest-100",
           ].join(" ")}
-          {...bindTap(onAbility)}
+          onPointerDown={onAbilityTap}
+          onContextMenu={preventSelect}
         >
           <img
             src="/assets/imgs/power.png"
@@ -154,6 +168,11 @@ export default function MobileControls({
               onCooldown ? "grayscale" : "",
             ].join(" ")}
           />
+          {onCooldown ? (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 text-base font-bold tabular-nums text-white">
+              {cdLeft}
+            </span>
+          ) : null}
         </button>
         <button
           type="button"

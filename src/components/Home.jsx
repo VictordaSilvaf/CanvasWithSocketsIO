@@ -12,6 +12,7 @@ export default function Home({
   onCreateRoom,
   onPrepareJoin,
   onRefreshPublicRooms,
+  onOpenLeaderboard,
 }) {
   const [code, setCode] = useState("");
   const [roomName, setRoomName] = useState("");
@@ -30,9 +31,35 @@ export default function Home({
               {typeof profile?.total_wins === "number"
                 ? ` · ${profile.total_wins}W / ${profile.total_games || 0}J`
                 : ""}
+              {onOpenLeaderboard ? (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    onClick={onOpenLeaderboard}
+                    className="cursor-pointer border-0 bg-transparent p-0 text-xs text-forest-200 underline decoration-forest-500 underline-offset-2 hover:text-forest-100"
+                  >
+                    Ranking
+                  </button>
+                </>
+              ) : null}
             </p>
           ) : isGuest ? (
-            <p className="mt-1 text-xs text-forest-300">Modo convidado</p>
+            <p className="mt-1 text-xs text-forest-300">
+              Modo convidado
+              {onOpenLeaderboard ? (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    onClick={onOpenLeaderboard}
+                    className="cursor-pointer border-0 bg-transparent p-0 text-xs text-forest-200 underline decoration-forest-500 underline-offset-2 hover:text-forest-100"
+                  >
+                    Ranking
+                  </button>
+                </>
+              ) : null}
+            </p>
           ) : null}
         </div>
         {onSignOut ? (

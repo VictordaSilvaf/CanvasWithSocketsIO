@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ABILITY_ACTIVATION_LABEL, getAbility } from "../constants";
 
-export default function Hud({ gameState, myId }) {
+export default function Hud({ gameState, myId, onLeave }) {
   const players = gameState.players || [];
   const me = players.find((p) => p.id === myId);
   const alive = players.filter((p) => p.alive).length;
@@ -31,11 +31,13 @@ export default function Hud({ gameState, myId }) {
 
   return (
     <div className="flex w-full max-w-[1100px] flex-wrap items-center justify-between gap-x-3 gap-y-1 border border-forest-600 bg-forest-950/80 px-2 py-1.5 text-[11px] text-forest-100 sm:px-4 sm:py-2 sm:text-sm">
-      <div className="flex flex-wrap gap-x-3 gap-y-1">
+      <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1">
         <span>Alcance: {me?.bombRange ?? 1}</span>
         <span>Bombas: {me?.maxBombs ?? 1}</span>
         <span>Vivos: {alive}</span>
-        <span className="hidden xs:inline sm:inline">Vitórias: {me?.wins ?? 0}</span>
+        <span className="hidden xs:inline sm:inline">
+          Vitórias: {me?.wins ?? 0}
+        </span>
         <span>
           Poder: {ability?.name || "—"}
           <span className="hidden sm:inline"> [{keyLabel}]</span>
@@ -45,12 +47,23 @@ export default function Hud({ gameState, myId }) {
           <span className="text-[#ffb4a2]">{statuses.join(" · ")}</span>
         ) : null}
       </div>
-      <div className="hidden flex-wrap gap-3 text-xs text-forest-200 sm:flex">
-        {ranked.map((p) => (
-          <span key={p.id} className={p.id === myId ? "text-forest-100" : ""}>
-            {p.name}: {p.wins || 0}
-          </span>
-        ))}
+      <div className="flex shrink-0 items-center gap-2">
+        <div className="hidden flex-wrap gap-3 text-xs text-forest-200 sm:flex">
+          {ranked.map((p) => (
+            <span key={p.id} className={p.id === myId ? "text-forest-100" : ""}>
+              {p.name}: {p.wins || 0}
+            </span>
+          ))}
+        </div>
+        {typeof onLeave === "function" ? (
+          <button
+            type="button"
+            onClick={onLeave}
+            className="cursor-pointer border border-forest-600 bg-transparent px-2 py-1 text-[10px] uppercase tracking-wider text-forest-200 hover:bg-forest-600/20"
+          >
+            Sair
+          </button>
+        ) : null}
       </div>
     </div>
   );

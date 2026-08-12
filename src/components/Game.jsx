@@ -11,14 +11,16 @@ export default function Game({
   onMove,
   onBomb,
   onAbility,
+  onLeave,
 }) {
   useGameSounds(gameState, myId);
   const playing = gameState.phase === "playing";
   const me = (gameState.players || []).find((p) => p.id === myId);
+  const alive = me?.alive !== false;
 
   return (
     <div className="relative flex min-h-dvh select-none flex-col items-center gap-2 overflow-hidden px-2 pb-[7.5rem] pt-2 md:justify-center md:gap-3 md:pb-2 md:pt-2">
-      <Hud gameState={gameState} myId={myId} />
+      <Hud gameState={gameState} myId={myId} onLeave={onLeave} />
       <div className="relative flex min-h-0 w-full flex-1 items-center justify-center md:flex-none">
         <Arena
           gameState={gameState}
@@ -32,7 +34,7 @@ export default function Game({
         onSelectAbility={onSelectAbility}
       />
       <MobileControls
-        visible={playing}
+        visible={playing && alive}
         onMove={onMove}
         onBomb={onBomb}
         onAbility={onAbility}

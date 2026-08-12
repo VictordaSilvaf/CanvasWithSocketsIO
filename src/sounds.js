@@ -120,4 +120,7 @@ export const sfx = {
   abilityHit() {
     playTone({ freq: 340, duration: 0.14, type: "sawtooth", gain: 0.06, slideTo: 180 });
   },
+  abilityCooldown() {
+    playTone({ freq: 140, duration: 0.1, type: "square", gain: 0.05, slideTo: 80 });
+  },
 };

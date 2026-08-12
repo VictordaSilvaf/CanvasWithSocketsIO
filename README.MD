@@ -2,13 +2,13 @@
 
 Projeto de estudo de **comunicação em tempo real** com [Socket.IO](https://socket.io/), [React](https://react.dev/) e [Tailwind CSS](https://tailwindcss.com/).
 
-Salas com **código**, escolha de **sprite**, **nome** e **poder**, mapa aleatório estilo Bomberman, **1 vida**, upgrades raros de alcance/bombas e vitória do **último vivo**.
+Salas **públicas/privadas** (com nome opcional), listagem de salas públicas, escolha de **sprite** e **nome**, **poder no countdown**, mapa estilo Bomberman, **1 vida**, upgrades raros e vitória do **último vivo**. Após morrer, você **assiste** a partida.
 
 ## Demo online
 
 **Jogar:** [https://supraboom.onrender.com/](https://supraboom.onrender.com/)
 
-Hospedado no [Render](https://render.com) (plano free). O serviço **hiberna após ~15 minutos sem tráfego**; na primeira visita (ou depois de idle) o site pode levar **cerca de 30–60 segundos** para “acordar” e carregar. Se a página ficar em branco ou demorar, aguarde e atualize.
+Hospedado no [Render](https://render.com) (plano free). O serviço **hiberna após ~15 minutos sem tráfego**; na primeira visita (ou depois de idle) o site pode levar **cerca de 30–60 segundos** para “acordar”.
 
 ---
 
@@ -21,103 +21,104 @@ npm run dev
 
 - Cliente (Vite): [http://localhost:5173](http://localhost:5173)
 - Servidor Socket.IO: `http://localhost:3000`
-- Na mesma rede (celular/outro PC): `http://SEU_IP:5173` (Vite já escuta em `0.0.0.0`; o servidor libera origins de LAN)
+- Na mesma rede (celular/outro PC): `http://SEU_IP:5173`
 
 Config local em [`.env`](.env) (veja [`.env.example`](.env.example)).
 
 ### Supabase (login + dados)
 
-1. Em **Project Settings → API**, copie `anon` e `service_role` para o `.env` (`VITE_SUPABASE_ANON_KEY` / `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY`).
-2. Rode o SQL em [`supabase/schema.sql`](supabase/schema.sql) no **SQL Editor**.
+1. Em **Project Settings → API**, copie `anon` e `service_role` para o `.env`.
+2. Rode o SQL em [`supabase/schema.sql`](supabase/schema.sql).
 3. Em **Authentication → Providers**, deixe Email ativo.
-4. Em **Authentication → URL Configuration**, use a URL de **network** (não só localhost):
-   - **Site URL:** `http://SEU_IP:5173` (ex.: `http://10.26.2.29:5173`)
-   - **Redirect URLs:** `http://SEU_IP:5173/**` e `http://localhost:5173/**`
-5. No `.env`, defina `VITE_APP_URL=http://SEU_IP:5173` (mesmo host da Site URL).
-6. Reinicie `npm run dev`.
+4. Configure **Site URL** / **Redirect URLs** e `VITE_APP_URL`.
+5. Reinicie `npm run dev`.
 
-Sem as keys no `.env`, a tela de login avisa e o jogo não autentica.
+Sem as keys, a tela de login avisa. Modo convidado continua disponível.
 
-Abra o cliente em várias abas (ou dispositivos na mesma rede apontando para o host).
+### Redis (opcional — persistência de salas)
 
-1. **Criar sala** (recebe um código) ou **entrar** digitando o código
-2. Escolher **sprite**, **nome** e **1 poder**
-3. No lobby, cada jogador clica em **Pronto** (o **host** pode expulsar outros)
-4. Com **pelo menos 2** jogadores e todos prontos, começa a contagem **3 · 2 · 1 · GO!**
-5. Cada vitória soma no **placar da sala**; após o fim, o lobby volta em ~5s
+Defina `REDIS_URL` (ex.: Upstash). Com Redis, o servidor salva/restaura salas após restart e o cliente tenta **rejoin** automático. Sem `REDIS_URL`, salas ficam só em memória.
 
-Máximo de **4** jogadores por sala. O jogo ocupa cerca de **90%** da tela.
+### Fluxo
+
+1. **Criar sala** (pública ou privada, nome opcional) ou **entrar** por código / lista pública
+2. Escolher **sprite** e **nome**
+3. No lobby, **Pronto** (host pode expulsar; qualquer um pode **Sair da sala**)
+4. Com **≥ 2** jogadores prontos: countdown **15s** (ou **3s** se todos escolherem poder) · GO!
+5. Poderes são escolhidos **durante o countdown** (sem escolha = aleatório)
+6. Vitórias no placar da sala; ranking global em **Ranking** na Home
+7. Após o fim, lobby volta em ~5s
+
+Máximo de **4** jogadores por sala.
 
 ### Produção
-
-Demo: [https://supraboom.onrender.com/](https://supraboom.onrender.com/) (cold start no free tier — pode demorar na primeira carga).
-
-Local / servidor próprio:
 
 ```bash
 npm run build
 npm start
 ```
 
-Sobe o Express + Socket.IO na porta **3000** (ou `PORT`) servindo o build do React.
-
 ---
 
 ## Controles
 
-| Tecla        | Ação            |
+| Tecla / UI   | Ação            |
 | ------------ | --------------- |
 | Setas / WASD | Move por tile   |
 | Espaço       | Solta bomba     |
-| E (padrão)   | Usa o poder     |
+| Z (padrão)   | Usa o poder     |
+| Mobile       | D-pad + bomba + poder |
 
-A tecla do poder vem de `activationKey` / `activationKeyLabel` em [`config/abilities.json`](config/abilities.json).
+Tecla do poder: `activationKey` / `activationKeyLabel` em [`config/abilities.json`](config/abilities.json).
 
 ---
 
 ## Poderes
 
-Cada jogador escolhe **um** poder na entrada. Cooldowns, alcance, velocidade e durações ficam só no JSON:
+Escolha **um** poder no countdown. Configs no JSON:
 
 | Id | Nome | Efeito |
 | -- | ---- | ------ |
-| `ice_ray` | Raio de gelo | Projétil que deixa o inimigo mais lento |
-| `local_blast` | Explosão localizada | Quebra softs no raio; empurra ou dá stun |
-| `confusion` | Confusão | Projétil que inverte as teclas do alvo |
-| `miner` | Minerador | Quebra o soft imediatamente à frente |
-
-Edite [`config/abilities.json`](config/abilities.json) e reinicie o servidor para aplicar.
+| `ice_ray` | Raio de gelo | Projétil que deixa o inimigo lento |
+| `local_blast` | Explosão localizada | Quebra softs no raio; empurra / stun |
+| `confusion` | Confusão | Inverte teclas do alvo |
+| `miner` | Minerador | Quebra o soft à frente |
+| `ghost` | Fantasma | Atravessa softs por um tempo |
+| `remote_bomb` | Bomba remota | Planta bomba à distância |
 
 ---
 
 ## Regras
 
-- Blocos **cinza** = indestrutíveis · blocos **marrom** = quebráveis
-- Soft quebrado pode dropar **Fire** (~12%, +alcance) ou **Bomb** (~10%, +1 bomba simultânea)
-- Explosão mata de vez · último vivo ganha
-- Sprite escolhido na entrada (não pode repetir na mesma sala)
+- Blocos **cinza** = indestrutíveis · **marrom** = quebráveis · chão branco
+- Soft quebrado pode dropar **Fire** ou **Bomb**
+- Explosão mata de vez · último vivo ganha · mortos assistem
+- Sprite único por sala
 
 ---
 
 ## Scripts
 
-| Comando         | Descrição                                      |
-| --------------- | ---------------------------------------------- |
-| `npm install`   | Instala dependências                           |
-| `npm run dev`   | Servidor + Vite (hot reload)                   |
-| `npm run build` | Build do React para `dist/`                    |
-| `npm start`     | Sobe o servidor servindo o build               |
+| Comando         | Descrição                    |
+| --------------- | ---------------------------- |
+| `npm install`   | Instala dependências         |
+| `npm run dev`   | Servidor + Vite              |
+| `npm run build` | Build React → `dist/`        |
+| `npm start`     | Serve build + Socket.IO      |
+| `npm test`      | Testes unitários (vitest)    |
 
 ---
 
 ## Estrutura
 
 ```
-config/abilities.json  # configs dos poderes (cooldown, alcance, tecla…)
-server/index.cjs       # Express + Socket.IO (salas + jogo)
-server/abilities.cjs   # lógica dos poderes
-src/                   # React + Tailwind
-public/assets/         # Sprites, bomb.png, grass.png
+config/abilities.json   # poderes
+server/index.cjs        # Express + Socket.IO
+server/abilities.cjs    # lógica dos poderes
+server/roomStore.cjs    # Redis opcional
+server/roomHelpers.cjs  # helpers testáveis
+src/                    # React + Tailwind
+public/assets/          # sprites, bomb.png, power.png
 ```
 
 ---

@@ -110,10 +110,38 @@ async function getProfile(userId) {
   return data;
 }
 
+async function getLeaderboard(limit = 20) {
+  const client = getAdminClient();
+  if (!client) return [];
+
+  const safeLimit = Math.min(50, Math.max(1, Number(limit) || 20));
+  const { data, error } = await client
+    .from("profiles")
+    .select("id, display_name, total_wins, total_games, preferred_sprite")
+    .order("total_wins", { ascending: false })
+    .order("total_games", { ascending: true })
+    .limit(safeLimit);
+
+  if (error) {
+    console.warn("[supabase] leaderboard:", error.message);
+    return [];
+  }
+
+  return (data || []).map((row, index) => ({
+    rank: index + 1,
+    id: row.id,
+    displayName: row.display_name || "Jogador",
+    totalWins: row.total_wins || 0,
+    totalGames: row.total_games || 0,
+    sprite: row.preferred_sprite || null,
+  }));
+}
+
 module.exports = {
   getAdminClient,
   verifyUserAccessToken,
   upsertProfilePrefs,
   recordMatchResult,
   getProfile,
+  getLeaderboard,
 };

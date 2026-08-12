@@ -7,6 +7,7 @@ export default function Lobby({
   roomError,
   onToggleReady,
   onKick,
+  onLeave,
 }) {
   const players = gameState.players || [];
   const me = players.find((p) => p.id === myId);
@@ -161,6 +162,16 @@ export default function Lobby({
       >
         {me?.ready ? "Cancelar pronto" : "Pronto"}
       </button>
+
+      {typeof onLeave === "function" ? (
+        <button
+          type="button"
+          onClick={onLeave}
+          className="mt-3 block w-full cursor-pointer border border-forest-600 bg-transparent px-4 py-3 text-sm font-bold uppercase tracking-wider text-forest-200 hover:bg-forest-600/20"
+        >
+          Sair da sala
+        </button>
+      ) : null}
 
       {roomError ? (
         <p className="mt-4 text-center text-sm text-[#ffb4a2]">{roomError}</p>
