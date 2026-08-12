@@ -97,6 +97,18 @@ body {
     );
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  /* Evita seleção/callout de texto ao jogar no celular */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 #root {

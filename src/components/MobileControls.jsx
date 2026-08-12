@@ -44,6 +44,10 @@ export default function MobileControls({
     }, 110);
   }
 
+  const preventSelect = (e) => {
+    e.preventDefault();
+  };
+
   const bindDir = (move) => ({
     onPointerDown: (e) => {
       e.preventDefault();
@@ -53,6 +57,7 @@ export default function MobileControls({
     onPointerUp: stopHold,
     onPointerCancel: stopHold,
     onPointerLeave: stopHold,
+    onContextMenu: preventSelect,
   });
 
   const bindTap = (fn) => ({
@@ -60,12 +65,13 @@ export default function MobileControls({
       e.preventDefault();
       fn?.();
     },
+    onContextMenu: preventSelect,
   });
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex items-end justify-between gap-3 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
-      style={{ touchAction: "none" }}
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex touch-none select-none items-end justify-between gap-3 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
+      onContextMenu={preventSelect}
     >
       <div className="pointer-events-auto grid w-[9.5rem] grid-cols-3 grid-rows-3 gap-1.5">
         {DIRS.map((d) => (
@@ -75,7 +81,7 @@ export default function MobileControls({
             aria-label={d.key}
             className={[
               d.grid,
-              "flex h-12 w-12 items-center justify-center rounded-lg border-2 border-forest-500/80 bg-forest-950/85 text-lg text-forest-100 shadow-[0_4px_12px_rgba(0,0,0,0.4)] active:bg-forest-600/50",
+              "flex h-12 w-12 touch-none select-none items-center justify-center rounded-lg border-2 border-forest-500/80 bg-forest-950/85 text-lg text-forest-100 shadow-[0_4px_12px_rgba(0,0,0,0.4)] active:bg-forest-600/50",
             ].join(" ")}
             {...bindDir(d.move)}
           >
@@ -88,7 +94,7 @@ export default function MobileControls({
         <button
           type="button"
           aria-label="Usar poder"
-          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-forest-300 bg-forest-700/90 text-xs font-bold uppercase tracking-wide text-forest-100 shadow-[0_4px_12px_rgba(0,0,0,0.4)] active:bg-forest-500"
+          className="flex h-14 w-14 touch-none select-none items-center justify-center rounded-full border-2 border-forest-300 bg-forest-700/90 text-xs font-bold uppercase tracking-wide text-forest-100 shadow-[0_4px_12px_rgba(0,0,0,0.4)] active:bg-forest-500"
           {...bindTap(onAbility)}
         >
           {abilityLabel}
@@ -96,7 +102,7 @@ export default function MobileControls({
         <button
           type="button"
           aria-label="Soltar bomba"
-          className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#e76f51] bg-[#9b2226]/90 text-sm font-bold uppercase tracking-wide text-white shadow-[0_4px_12px_rgba(0,0,0,0.45)] active:bg-[#e76f51]"
+          className="flex h-16 w-16 touch-none select-none items-center justify-center rounded-full border-2 border-[#e76f51] bg-[#9b2226]/90 text-sm font-bold uppercase tracking-wide text-white shadow-[0_4px_12px_rgba(0,0,0,0.45)] active:bg-[#e76f51]"
           {...bindTap(onBomb)}
         >
           Bomba
