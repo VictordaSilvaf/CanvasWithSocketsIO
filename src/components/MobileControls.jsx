@@ -1,10 +1,36 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+} from "lucide-react";
 
 const DIRS = [
-  { key: "up", label: "▲", move: { x: 0, y: -1 }, grid: "col-start-2 row-start-1" },
-  { key: "left", label: "◀", move: { x: -1, y: 0 }, grid: "col-start-1 row-start-2" },
-  { key: "right", label: "▶", move: { x: 1, y: 0 }, grid: "col-start-3 row-start-2" },
-  { key: "down", label: "▼", move: { x: 0, y: 1 }, grid: "col-start-2 row-start-3" },
+  {
+    key: "up",
+    Icon: ChevronUp,
+    move: { x: 0, y: -1 },
+    grid: "col-start-2 row-start-1",
+  },
+  {
+    key: "left",
+    Icon: ChevronLeft,
+    move: { x: -1, y: 0 },
+    grid: "col-start-1 row-start-2",
+  },
+  {
+    key: "right",
+    Icon: ChevronRight,
+    move: { x: 1, y: 0 },
+    grid: "col-start-3 row-start-2",
+  },
+  {
+    key: "down",
+    Icon: ChevronDown,
+    move: { x: 0, y: 1 },
+    grid: "col-start-2 row-start-3",
+  },
 ];
 
 /**
@@ -16,16 +42,28 @@ export default function MobileControls({
   onMove,
   onBomb,
   onAbility,
-  abilityLabel = "Z",
+  abilityCooldownUntil = 0,
+  serverNow = 0,
 }) {
   const holdRef = useRef(null);
   const dirRef = useRef(null);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     return () => stopHold();
   }, []);
 
+  useEffect(() => {
+    if (!visible) return;
+    const id = setInterval(() => setNow(Date.now()), 200);
+    return () => clearInterval(id);
+  }, [visible]);
+
   if (!visible) return null;
+
+  const skew = now - (serverNow || now);
+  const serverAligned = now - skew;
+  const onCooldown = abilityCooldownUntil > serverAligned;
 
   function stopHold() {
     if (holdRef.current) {
@@ -74,18 +112,22 @@ export default function MobileControls({
       onContextMenu={preventSelect}
     >
       <div className="pointer-events-auto grid w-[9.5rem] grid-cols-3 grid-rows-3 gap-1.5">
-        {DIRS.map((d) => (
+        {DIRS.map(({ key, Icon, move, grid }) => (
           <button
-            key={d.key}
+            key={key}
             type="button"
-            aria-label={d.key}
+            aria-label={key}
             className={[
-              d.grid,
-              "flex h-12 w-12 touch-none select-none items-center justify-center rounded-lg border-2 border-forest-500/80 bg-forest-950/85 text-lg text-forest-100 shadow-[0_4px_12px_rgba(0,0,0,0.4)] active:bg-forest-600/50",
+              grid,
+              "flex h-12 w-12 touch-none select-none items-center justify-center rounded-lg border-2 border-forest-500/80 bg-forest-950/85 text-forest-100 shadow-[0_4px_12px_rgba(0,0,0,0.4)] active:bg-forest-600/50",
             ].join(" ")}
-            {...bindDir(d.move)}
+            {...bindDir(move)}
           >
-            {d.label}
+            <Icon
+              className="pointer-events-none h-7 w-7"
+              strokeWidth={2.5}
+              aria-hidden
+            />
           </button>
         ))}
       </div>
@@ -94,18 +136,37 @@ export default function MobileControls({
         <button
           type="button"
           aria-label="Usar poder"
-          className="flex h-14 w-14 touch-none select-none items-center justify-center rounded-full border-2 border-forest-300 bg-forest-700/90 text-xs font-bold uppercase tracking-wide text-forest-100 shadow-[0_4px_12px_rgba(0,0,0,0.4)] active:bg-forest-500"
+          aria-disabled={onCooldown}
+          className={[
+            "flex h-14 w-14 touch-none select-none items-center justify-center overflow-hidden rounded-full border-2 shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition-colors",
+            onCooldown
+              ? "border-zinc-500 bg-zinc-600/90 opacity-70"
+              : "border-white bg-white active:bg-forest-100",
+          ].join(" ")}
           {...bindTap(onAbility)}
         >
-          {abilityLabel}
+          <img
+            src="/assets/imgs/power.png"
+            alt=""
+            draggable={false}
+            className={[
+              "pointer-events-none h-9 w-9 object-contain [image-rendering:auto] transition-[filter]",
+              onCooldown ? "grayscale" : "",
+            ].join(" ")}
+          />
         </button>
         <button
           type="button"
           aria-label="Soltar bomba"
-          className="flex h-16 w-16 touch-none select-none items-center justify-center rounded-full border-2 border-[#e76f51] bg-[#9b2226]/90 text-sm font-bold uppercase tracking-wide text-white shadow-[0_4px_12px_rgba(0,0,0,0.45)] active:bg-[#e76f51]"
+          className="flex h-16 w-16 touch-none select-none items-center justify-center overflow-hidden rounded-full border-2 border-[#e76f51] bg-[#9b2226]/90 shadow-[0_4px_12px_rgba(0,0,0,0.45)] active:bg-[#e76f51]"
           {...bindTap(onBomb)}
         >
-          Bomba
+          <img
+            src="/assets/imgs/bomb.png"
+            alt=""
+            draggable={false}
+            className="pointer-events-none h-10 w-10 object-contain [image-rendering:pixelated]"
+          />
         </button>
       </div>
     </div>

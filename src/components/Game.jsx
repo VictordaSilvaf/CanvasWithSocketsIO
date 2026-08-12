@@ -3,7 +3,6 @@ import Hud from "./Hud";
 import MobileControls from "./MobileControls";
 import Overlay from "./Overlay";
 import { useGameSounds } from "../hooks/useGameSounds";
-import { ABILITY_ACTIVATION_LABEL } from "../constants";
 
 export default function Game({
   gameState,
@@ -15,8 +14,7 @@ export default function Game({
 }) {
   useGameSounds(gameState, myId);
   const playing = gameState.phase === "playing";
-  const abilityLabel =
-    gameState.activationKeyLabel || ABILITY_ACTIVATION_LABEL || "Z";
+  const me = (gameState.players || []).find((p) => p.id === myId);
 
   return (
     <div className="relative flex min-h-dvh select-none flex-col items-center gap-2 overflow-hidden px-2 pb-[7.5rem] pt-2 md:justify-center md:gap-3 md:pb-2 md:pt-2">
@@ -38,7 +36,8 @@ export default function Game({
         onMove={onMove}
         onBomb={onBomb}
         onAbility={onAbility}
-        abilityLabel={abilityLabel}
+        abilityCooldownUntil={me?.abilityCooldownUntil || 0}
+        serverNow={gameState.serverNow || 0}
       />
     </div>
   );
